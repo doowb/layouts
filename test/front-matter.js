@@ -39,7 +39,7 @@ describe('when nested layouts are defined in front-matter:', function () {
       'base!'
     ].join('\n');
 
-    actual.should.eql(expected);
+    actual.content.should.eql(expected);
   });
 
   it('should recursively inject content from each file into its layout.', function () {
@@ -64,6 +64,6 @@ describe('when nested layouts are defined in front-matter:', function () {
       'base!'
     ].join('\n');
 
-    actual.should.eql(expected);
+    actual.content.should.eql(expected);
   });
 });

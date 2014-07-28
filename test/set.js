@@ -40,7 +40,7 @@ describe('.set():', function () {
         'F below',
         'base!'
       ].join('\n');
-      actual.should.eql(expected);
+      actual.content.should.eql(expected);
     });
   });
 
@@ -73,7 +73,7 @@ describe('.set():', function () {
         'F below',
         'base!'
       ].join('\n');
-      actual.should.eql(expected);
+      actual.content.should.eql(expected);
     });
   });
 });

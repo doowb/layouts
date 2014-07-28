@@ -6,16 +6,17 @@
  */
 
 var should = require('should');
+var _ = require('lodash');
 var Layouts = require('..');
 var layouts = new Layouts();
 
 
 describe('layouts data', function () {
-  layouts.set('a', 'b', 'A above\n{{body}}\nA below');
-  layouts.set('b', 'c', 'B above\n{{body}}\nB below');
+  layouts.set('a', {layout: 'b', xyz: 'aaa', one: 'two'}, 'A above\n{{body}}\nA below');
+  layouts.set('b', {layout: 'c', xyz: 'bbb', three: 'four'}, 'B above\n{{body}}\nB below');
   layouts.set('c', 'd', 'C above\n{{body}}\nC below');
   layouts.set('d', 'e', 'D above\n{{body}}\nD below');
-  layouts.set('base', undefined, 'base!\n{{body}}\nbase!');
+  layouts.set('base', {xyz: 'zzz'}, 'base!\n{{body}}\nbase!');
   layouts.set('e', 'f', 'E above\n{{body}}\nE below');
   layouts.set('f', 'base', 'F above\n{{body}}\nF below');
   layouts.set('foo', 'a', 'I\'m a <%= title %>');
@@ -39,6 +40,7 @@ describe('layouts data', function () {
       'F below',
       'base!'
     ].join('\n');
-    actual.should.eql(expected);
+    actual.content.should.eql(expected);
+    actual.data.should.eql({xyz: 'aaa', one: 'two', three: 'four'});
   });
 });

@@ -35,13 +35,14 @@ var _ = require('lodash');
  * @param {String} `options.tag` The tag name to use. Default is `body` (e.g. `{{ body }}`)
  */
 
-var Layouts = function Layouts(cache, options) {
+var Layouts = function Layouts(options) {
   var opts = _.defaults({}, options, {
     delims: ['{{', '}}'],
     tag: 'body'
   });
 
-  this.cache = Object.create(cache || null);
+  this.cache = Object.create(opts.cache || null);
+  this.extend = opts.extend || _.extend;
   this.defaultTag = this.makeTag(opts);
   this.regex = this.makeRegex(opts);
 };
@@ -86,26 +87,6 @@ Layouts.prototype.makeRegex = function (options) {
 
 
 /**
- * ## .assertLayout
- *
- * Assert whether or not a layout should be used based on
- * the given `value`. If a layout should be used, the name of the
- * layout is returned, if not `null` is returned.
- *
- * @param  {*} `value`
- * @return {String|Null} Returns `true` or `null`.
- * @api private
- */
-
-Layouts.prototype.assertLayout = function (value) {
-  if (!value || isFalsey(value)) {
-    return null;
-  }
-  return value;
-};
-
-
-/**
  * ## .set
  *
  * Store a template on the cache by its `name`, the `layout` to use,
@@ -118,17 +99,23 @@ Layouts.prototype.assertLayout = function (value) {
  * ```
  *
  * @param {String|Object} `name` If `name` is a string, `layout` and `content` are required.
- * @param {String} `layout` Specify the layout to be used for the given template.
+ * @param {String|Object} `data` Pass a string defining the name of layout to use for the given
+ *                               template, or pass an object with a `layout` property.
  * @param {String} `content` The template "content", this will not be compiled or rendered.
  * @api public
  */
 
-Layouts.prototype.set = function (name, layout, content) {
+Layouts.prototype.set = function (name, data, content) {
   if (arguments.length === 1 && typeof name === 'object') {
     _.extend(this.cache, name);
     return this;
   }
-  this.cache[name] = {layout: layout, content: content};
+
+  this.cache[name] = {
+    layout: (data && data.layout) ? data.layout : data,
+    content: content,
+    data: data
+  };
   return this;
 };
 
@@ -154,6 +141,48 @@ Layouts.prototype.get = function (name) {
     return this.cache;
   }
   return this.cache[name];
+};
+
+
+/**
+ * ## .extendData
+ *
+ * Assert whether or not a layout should be used based on
+ * the given `value`. If a layout should be used, the name of the
+ * layout is returned, if not `null` is returned.
+ *
+ * @param  {*} `value`
+ * @return {String|Null} Returns `true` or `null`.
+ * @api private
+ */
+
+Layouts.prototype.extendData = function (obj, data) {
+  if (typeof obj.data === 'object') {
+    this.extend(data, obj.data);
+  }
+  delete data.layout;
+  return data;
+};
+
+
+
+/**
+ * ## .assertLayout
+ *
+ * Assert whether or not a layout should be used based on
+ * the given `value`. If a layout should be used, the name of the
+ * layout is returned, if not `null` is returned.
+ *
+ * @param  {*} `value`
+ * @return {String|Null} Returns `true` or `null`.
+ * @api private
+ */
+
+Layouts.prototype.assertLayout = function (value) {
+  if (!value || isFalsey(value)) {
+    return null;
+  }
+  return value;
 };
 
 
@@ -199,14 +228,16 @@ Layouts.prototype.createStack = function (name) {
 
 Layouts.prototype.wrap = function (name) {
   var stack = this.createStack(name);
+  var data = {};
 
   return _.reduce(stack, function (acc, layout) {
     var tmpl = this.cache[layout];
     var content = acc.content || this.defaultTag;
     return {
+      data: this.extendData(tmpl, data),
       content: content.replace(this.regex, tmpl.content)
     };
-  }.bind(this), {}).content;
+  }.bind(this), {});
 };
 
 

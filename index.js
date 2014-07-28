@@ -1,27 +1,127 @@
-'use strict';
+/*!
+ * layouts <https://github.com/jonschlinkert/layouts>
+ *
+ * Copyright (c) 2014 Jon Schlinkert, contributors
+ * Licensed under the MIT License (MIT)
+ */
 
-var _ = require('lodash');
-var isFalsey = require('falsey');
+'use strict';
 
 
 /**
- * Wrap pages with nested layouts.
- *
- * @param {Object} `cache` Optionally pass a template cache.
+ * Module dependencies
  */
 
-var Layouts = function Layouts(cache) {
-  this.cache = cache || {};
+var isFalsey = require('falsey');
+var _ = require('lodash');
+
+
+/**
+ * ## Layouts
+ *
+ * Create a new instance of `Layouts`, optionally passing the default
+ * `cache` and `options` to use.
+ *
+ * **Example:**
+ *
+ * ```js
+ * var Layouts = require('layouts');
+ * var layouts = new Layouts();
+ * ```
+ *
+ * @param {Object} `cache` A template cache. See [Layouts#set](#set) for object details.
+ * @param {Object} `options` Options to use.
+ * @param {Array} `options.delims` Template delimiters to use formatted as an array (`['{{', '}}']`)
+ * @param {String} `options.tag` The tag name to use. Default is `body` (e.g. `{{ body }}`)
+ */
+
+var Layouts = function Layouts(cache, options) {
+  var opts = _.defaults({}, options, {
+    delims: ['{{', '}}'],
+    tag: 'body'
+  });
+
+  this.cache = Object.create(cache || null);
+  this.defaultTag = this.makeTag(opts);
+  this.regex = this.makeRegex(opts);
 };
 
 
-Layouts.prototype.useLayout = function (layout) {
-  if (!layout || isFalsey(layout)) {
+/**
+ * ## .makeTag
+ *
+ * Generate the default body tag to use as a fallback, based on the
+ * `tag` and `delims` defined in the options.
+ *
+ * @param  {Object} options
+ * @return {String} The actual body tag, e.g. `{{ body }}`
+ * @api private
+ */
+
+Layouts.prototype.makeTag = function (options) {
+  var opts = _.extend({}, options);
+  return [
+    opts.delims[0],
+    opts.tag,
+    opts.delims[1]
+  ].join(opts.sep || ' ');
+};
+
+
+/**
+ * ## .makeRegex
+ *
+ * Return a regular expression for the "body" tag based on the
+ * `tag` and `delims` defined in the options.
+ *
+ * @param  {Object} `options`
+ * @return {RegExp}
+ * @api private
+ */
+
+Layouts.prototype.makeRegex = function (options) {
+  var opts = _.extend({sep: '\\s*'}, options);
+  return new RegExp(this.makeTag(opts), opts.flags);
+};
+
+
+/**
+ * ## .assertLayout
+ *
+ * Assert whether or not a layout should be used based on
+ * the given `value`. If a layout should be used, the name of the
+ * layout is returned, if not `null` is returned.
+ *
+ * @param  {*} `value`
+ * @return {String|Null} Returns `true` or `null`.
+ * @api private
+ */
+
+Layouts.prototype.assertLayout = function (value) {
+  if (!value || isFalsey(value)) {
     return null;
   }
-  return layout;
+  return value;
 };
 
+
+/**
+ * ## .set
+ *
+ * Store a template on the cache by its `name`, the `layout` to use,
+ * and the template's `content.
+ *
+ * **Example:**
+ *
+ * ```js
+ * layouts.set('a', 'b', '<h1>Foo</h1>\n{{body}}\n');
+ * ```
+ *
+ * @param {String|Object} `name` If `name` is a string, `layout` and `content` are required.
+ * @param {String} `layout` Specify the layout to be used for the given template.
+ * @param {String} `content` The template "content", this will not be compiled or rendered.
+ * @api public
+ */
 
 Layouts.prototype.set = function (name, layout, content) {
   if (arguments.length === 1 && typeof name === 'object') {
@@ -33,6 +133,22 @@ Layouts.prototype.set = function (name, layout, content) {
 };
 
 
+/**
+ * ## .get
+ *
+ * Get a cached template by `name`.
+ *
+ * **Example:**
+ *
+ * ```js
+ * layouts.get('a');
+ * //=> { layout: 'b', content: '<h1>Foo</h1>\n{{body}}\n' }
+ * ```
+ *
+ * @param  {String} `name`
+ * @return {Object} The template object to return.
+ */
+
 Layouts.prototype.get = function (name) {
   if (!name) {
     return this.cache;
@@ -41,31 +157,61 @@ Layouts.prototype.get = function (name) {
 };
 
 
+/**
+ * ## .createStack
+ *
+ * Build a layout stack.
+ *
+ * @param  {String} `name` The name of the layout to add to the stack.
+ * @return {String}
+ * @api private
+ */
+
 Layouts.prototype.createStack = function (name) {
-  name = this.useLayout(name);
+  name = this.assertLayout(name);
   var template = Object.create(null);
   var stack = [];
 
-  while (name && (template = this.get(name))) {
+  while (name && (template = this.cache[name])) {
     stack.unshift(name);
-    name = this.useLayout(template.layout);
+    name = this.assertLayout(template.layout);
   }
   return stack;
 };
 
 
-Layouts.prototype.wrap = function (name, options) {
-  var opts = _.extend({}, options);
-  var tag = opts.tag || /\{{\s*body\s*}}/;
-  var stack = this.createStack(name);
-  var result = {};
+/**
+ * ## .wrap
+ *
+ * Flatten nested layouts.
+ *
+ * **Example:**
+ *
+ * ```js
+ * var page = layouts.wrap('base');
+ * var tmpl = _.template(page, context);
+ * ```
+ *
+ * @param  {String} `name` The layout to start with.
+ * @return {String} Resulting flattened layout.
+ * @api public
+ */
 
-  result = stack.reduce(function (acc, layout) {
-    var tmpl = this.get(layout);
-    var content = acc.content || '{{body}}';
-    result.content = content.replace(tag, tmpl.content)
-    return result;
-  }.bind(this), result).content;
+Layouts.prototype.wrap = function (name) {
+  var stack = this.createStack(name);
+
+  return _.reduce(stack, function (acc, layout) {
+    var tmpl = this.cache[layout];
+    var content = acc.content || this.defaultTag;
+    return {
+      content: content.replace(this.regex, tmpl.content)
+    };
+  }.bind(this), {}).content;
 };
+
+
+/**
+ * Expose `Layouts`
+ */
 
 module.exports = Layouts;

@@ -31,7 +31,21 @@ glob.sync('test/fixtures/*.tmpl').forEach(function(filepath) {
 describe('when nested layouts are defined in front-matter:', function () {
   it('should recursively inject content from each file into its layout.', function () {
 
-    var actual = layouts.wrap('page');
+    // Define the name of the cached template to start with
+    var actual = layouts.wrap('simple');
+    var expected = [
+      'base!',
+      'I\'m a simple page.',
+      'base!'
+    ].join('\n');
+
+    actual.should.eql(expected);
+  });
+
+  it('should recursively inject content from each file into its layout.', function () {
+
+    // Define the name of the cached template to start with
+    var actual = layouts.wrap('foo');
     var expected = [
       'base!',
       'F above',

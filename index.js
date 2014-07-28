@@ -7,11 +7,6 @@
 
 'use strict';
 
-
-/**
- * Module dependencies
- */
-
 var isFalsey = require('falsey');
 var _ = require('lodash');
 
@@ -26,7 +21,7 @@ var _ = require('lodash');
  *
  * ```js
  * var Layouts = require('layouts');
- * var layouts = new Layouts();
+ * var layout = new Layouts();
  * ```
  *
  * @param {Object} `cache` A template cache. See [Layouts#set](#set) for object details.
@@ -35,7 +30,7 @@ var _ = require('lodash');
  * @param {String} `options.tag` The tag name to use. Default is `body` (e.g. `{{ body }}`)
  */
 
-var Layouts = function Layouts(options) {
+var Layouts = module.exports = function Layouts(options) {
   var opts = _.defaults({}, options, {
     delims: ['{{', '}}'],
     tag: 'body'
@@ -95,7 +90,7 @@ Layouts.prototype.makeRegex = function (options) {
  * **Example:**
  *
  * ```js
- * layouts.set('a', 'b', '<h1>Foo</h1>\n{{body}}\n');
+ * layout.set('a', 'b', '<h1>Foo</h1>\n{{body}}\n');
  * ```
  *
  * @param {String|Object} `name` If `name` is a string, `layout` and `content` are required.
@@ -128,7 +123,7 @@ Layouts.prototype.set = function (name, data, content) {
  * **Example:**
  *
  * ```js
- * layouts.get('a');
+ * layout.get('a');
  * //=> { layout: 'b', content: '<h1>Foo</h1>\n{{body}}\n' }
  * ```
  *
@@ -217,7 +212,7 @@ Layouts.prototype.createStack = function (name) {
  * **Example:**
  *
  * ```js
- * var page = layouts.wrap('base');
+ * var page = layout.wrap('base');
  * var tmpl = _.template(page, context);
  * ```
  *
@@ -240,9 +235,3 @@ Layouts.prototype.wrap = function (name) {
   }.bind(this), {});
 };
 
-
-/**
- * Expose `Layouts`
- */
-
-module.exports = Layouts;

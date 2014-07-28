@@ -21,7 +21,7 @@ var _ = require('lodash');
  *
  * ```js
  * var Layouts = require('layouts');
- * var layout = new Layouts();
+ * var layouts = new Layouts();
  * ```
  *
  * @param {Object} `cache` A template cache. See [Layouts#set](#set) for object details.
@@ -90,7 +90,7 @@ Layouts.prototype.makeRegex = function (options) {
  * **Example:**
  *
  * ```js
- * layout.set('a', 'b', '<h1>Foo</h1>\n{{body}}\n');
+ * layouts.set('a', 'b', '<h1>Foo</h1>\n{{body}}\n');
  * ```
  *
  * @param {String|Object} `name` If `name` is a string, `layout` and `content` are required.
@@ -123,7 +123,7 @@ Layouts.prototype.set = function (name, data, content) {
  * **Example:**
  *
  * ```js
- * layout.get('a');
+ * layouts.get('a');
  * //=> { layout: 'b', content: '<h1>Foo</h1>\n{{body}}\n' }
  * ```
  *
@@ -142,9 +142,8 @@ Layouts.prototype.get = function (name) {
 /**
  * ## .extendData
  *
- * Assert whether or not a layout should be used based on
- * the given `value`. If a layout should be used, the name of the
- * layout is returned, if not `null` is returned.
+ * Extend `data` with the given `obj. A custom function can be
+ * passed on `options.extend` to change how data is merged.
  *
  * @param  {*} `value`
  * @return {String|Null} Returns `true` or `null`.
@@ -205,23 +204,22 @@ Layouts.prototype.createStack = function (name) {
 
 
 /**
- * ## .wrap
+ * ## .stack
  *
  * Flatten nested layouts.
  *
  * **Example:**
  *
  * ```js
- * var page = layout.wrap('base');
- * var tmpl = _.template(page, context);
+ * var layout = layouts.stack('base');
  * ```
  *
  * @param  {String} `name` The layout to start with.
  * @return {String} Resulting flattened layout.
- * @api public
+ * @api private
  */
 
-Layouts.prototype.wrap = function (name) {
+Layouts.prototype.stack = function (name) {
   var stack = this.createStack(name);
   var data = {};
 
@@ -235,3 +233,28 @@ Layouts.prototype.wrap = function (name) {
   }.bind(this), {});
 };
 
+
+/**
+ * ## .inject
+ *
+ * Flatten nested layouts.
+ *
+ * **Example:**
+ *
+ * ```js
+ * var page = layouts.inject(str, 'base');
+ * var tmpl = _.template(page, context);
+ * ```
+ *
+ * @param  {String} `name` The layout to start with.
+ * @return {String} Resulting flattened layout.
+ * @api private
+ */
+
+Layouts.prototype.inject = function (str, name) {
+  var layout = this.stack(name);
+  if (layout.content) {
+    str = layout.content.replace(this.regex, str);
+  }
+  return {data: layout.data, content: str};
+};

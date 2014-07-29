@@ -1,7 +1,7 @@
 {
   "name": "layouts",
   "description": "Wrap templates with layouts. Layouts can use/refer to other layouts, allowing them to be nested.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "homepage": "https://github.com/jonschlinkert/layouts",
   "author": {
     "name": "Jon Schlinkert",

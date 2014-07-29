@@ -22,7 +22,7 @@ describe('layouts data', function () {
   layouts.set('foo', 'a', 'I\'m a <%= title %>');
 
   it('should return an extended data object from the flattened layouts.', function () {
-    var actual = layouts.wrap('foo');
+    var actual = layouts.stack('foo');
     var expected = [
       'base!',
       'F above',

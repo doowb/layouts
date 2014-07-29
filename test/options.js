@@ -20,7 +20,7 @@ describe('layouts options', function () {
       layouts.set('foo', 'a', 'I\'m a <%= title %>');
 
       it('should merge the context so that the inner-most templates context wins.', function () {
-        var actual = layouts.wrap('foo');
+        var actual = layouts.stack('foo');
         var expected = [
           'base!',
           'B above',
@@ -43,7 +43,7 @@ describe('layouts options', function () {
       layouts.set('foo', 'a', 'I\'m a <%= title %>');
 
       it('should change the order in which the context is merged.', function () {
-        var actual = layouts.wrap('foo');
+        var actual = layouts.stack('foo');
         var expected = [
           'base!',
           'B above',

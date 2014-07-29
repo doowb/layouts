@@ -29,7 +29,7 @@ describe('layouts cache', function () {
 
     it('should recursively inject content from each file into its layout.', function () {
       // Define the name of the cached template to start with
-      var actual = layouts.wrap('simple');
+      var actual = layouts.stack('simple');
       var expected = [
         'base!',
         'I\'m a simple page.',
@@ -39,7 +39,7 @@ describe('layouts cache', function () {
     });
 
     it('should extend the `cache`.', function () {
-      var actual = layouts.wrap('foo');
+      var actual = layouts.stack('foo');
       var expected = [
         'base!',
         'F above',

@@ -22,7 +22,7 @@ describe('.set():', function () {
     layouts.set({foo: { layout: 'a', content: 'I\'m a <%= title %>' }});
 
     it('should extend the `cache`.', function () {
-      var actual = layouts.wrap('foo');
+      var actual = layouts.stack('foo');
       var expected = [
         'base!',
         'F above',
@@ -55,7 +55,7 @@ describe('.set():', function () {
     layouts.set('foo', 'a', 'I\'m a <%= title %>');
 
     it('should extend the `cache`.', function () {
-      var actual = layouts.wrap('foo');
+      var actual = layouts.stack('foo');
       var expected = [
         'base!',
         'F above',

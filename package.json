@@ -75,6 +75,7 @@
     "verb-tag-jscomments": ">= 0.1.4"
   },
   "dependencies": {
+    "debug": "^1.0.4",
     "falsey": "^0.1.0",
     "lodash": "^2.4.1"
   }

@@ -38,8 +38,8 @@ var Layouts = module.exports = function Layouts(options) {
 
   this.cache = Object.create(opts.cache || null);
   this.extend = opts.extend || _.extend;
-  this.defaultTag = this.makeTag(opts);
-  this.regex = this.makeRegex(opts);
+  this.defaultTag = this.makeTag(opts)
+  this.options = opts;
 };
 
 
@@ -55,7 +55,7 @@ var Layouts = module.exports = function Layouts(options) {
  */
 
 Layouts.prototype.makeTag = function (options) {
-  var opts = _.extend({}, options);
+  var opts = _.defaults({}, options, this.options);
   return [
     opts.delims[0],
     opts.tag,
@@ -219,13 +219,18 @@ Layouts.prototype.createStack = function (name) {
  * @api private
  */
 
-Layouts.prototype.stack = function (name) {
+Layouts.prototype.stack = function (name, options) {
   var stack = this.createStack(name);
+  var opts = _.extend({}, options);
   var data = {};
 
+  var tag = this.makeTag(opts) || this.defaultTag;
+  this.regex = this.makeRegex(opts);
+
   return _.reduce(stack, function (acc, layout) {
+    var content = acc.content || tag;
     var tmpl = this.cache[layout];
-    var content = acc.content || this.defaultTag;
+
     return {
       data: this.extendData(tmpl, data),
       content: content.replace(this.regex, tmpl.content)
@@ -251,8 +256,8 @@ Layouts.prototype.stack = function (name) {
  * @api private
  */
 
-Layouts.prototype.inject = function (str, name) {
-  var layout = this.stack(name);
+Layouts.prototype.inject = function (str, name, options) {
+  var layout = this.stack(name, options);
   if (layout.content) {
     str = layout.content.replace(this.regex, str);
   }

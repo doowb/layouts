@@ -10,55 +10,36 @@
 var should = require('should');
 var Layouts = require('..');
 
-var layouts = new Layouts({
-  cache: {
-    a: { layout: 'b', content: 'A above\n{{body}}\nA below' },
-    b: { layout: 'c', content: 'B above\n{{body}}\nB below' },
-    c: { layout: 'd', content: 'C above\n{{body}}\nC below' },
-    d: { layout: 'e', content: 'D above\n{{body}}\nD below' },
-    base: { layout: undefined, content: 'base!\n{{body}}\nbase!' },
-    e: { layout: 'f', content: 'E above\n{{body}}\nE below' },
-    f: { layout: 'base', content: 'F above\n{{body}}\nF below' },
-    foo: { layout: 'a', content: 'I\'m a <%= title %>' },
-    simple: { layout: 'base', content: 'I\'m a simple page.' },
-  }
-});
 
 describe('layouts cache', function () {
-  describe('.cache()', function () {
-
-    it('should recursively inject content from each file into its layout.', function () {
-      // Define the name of the cached template to start with
-      var actual = layouts.wrap('simple');
-      var expected = [
-        'base!',
-        'I\'m a simple page.',
-        'base!'
-      ].join('\n');
-      actual.content.should.eql(expected);
+  it('should add layouts to the cache when passed to `new Layouts`.', function () {
+    var layouts = new Layouts({
+      cache: {
+        first: { layout: 'a', content: 'I\'m a <%= title %>' },
+        a: { layout: 'b', content: 'A above\n{{body}}\nA below' },
+        b: { layout: 'c', content: 'B above\n{{body}}\nB below' },
+        c: { layout: 'd', content: 'C above\n{{body}}\nC below' },
+        d: { layout: 'e', content: 'D above\n{{body}}\nD below' },
+        e: { layout: 'f', content: 'E above\n{{body}}\nE below' },
+        f: { layout: 'last', content: 'F above\n{{body}}\nF below' },
+        last: { layout: undefined, content: 'last!\n{{body}}\nlast!' }
+      }
     });
+    Object.keys(layouts.cache).length.should.eql(8);
+  });
 
-    it('should extend the `cache`.', function () {
-      var actual = layouts.wrap('foo');
-      var expected = [
-        'base!',
-        'F above',
-        'E above',
-        'D above',
-        'C above',
-        'B above',
-        'A above',
-        'I\'m a <%= title %>', // should not be compiled
-        'A below',
-        'B below',
-        'C below',
-        'D below',
-        'E below',
-        'F below',
-        'base!'
-      ].join('\n');
+  it('should add layouts to the cache when using `.set()`.', function () {
+    var layouts = new Layouts();
 
-      actual.content.should.eql(expected);
-    });
+    layouts.set('first', 'a', 'I\'m a <%= title %>');
+    layouts.set('a', 'b', 'A above\n{{body}}\nA below');
+    layouts.set('b', 'c', 'B above\n{{body}}\nB below');
+    layouts.set('c', 'd', 'C above\n{{body}}\nC below');
+    layouts.set('d', 'e', 'D above\n{{body}}\nD below');
+    layouts.set('e', 'f', 'E above\n{{body}}\nE below');
+    layouts.set('f', 'last', 'F above\n{{body}}\nF below');
+    layouts.set('last', undefined, 'last!\n{{body}}\nlast!');
+
+    Object.keys(layouts.cache).length.should.eql(8);
   });
 });

@@ -36,7 +36,7 @@ var Layouts = module.exports = function Layouts(options) {
     tag: 'body'
   });
 
-  this.cache = Object.create(opts.cache || null);
+  this.cache = opts.cache || {};
   this.extend = opts.extend || _.extend;
   this.defaultTag = this.makeTag(opts)
   this.options = opts;
@@ -76,8 +76,9 @@ Layouts.prototype.makeTag = function (options) {
  */
 
 Layouts.prototype.makeRegex = function (options) {
-  var opts = _.extend({sep: '\\s*'}, options);
-  return new RegExp(this.makeTag(opts), opts.flags);
+  var opts = _.extend({sep: '\\s*'}, this.options, options);
+  var tag = this.makeTag(opts).replace(/[\]()[{|}]/g, '\\$&');
+  return new RegExp(tag, opts.flags || 'g');
 };
 
 
@@ -105,10 +106,9 @@ Layouts.prototype.set = function (name, data, content) {
     _.extend(this.cache, name);
     return this;
   }
-
   this.cache[name] = {
     layout: (data && data.layout) ? data.layout : data,
-    content: content,
+    content: (data && data.content) ? data.content : content,
     data: data
   };
   return this;
@@ -151,11 +151,10 @@ Layouts.prototype.get = function (name) {
  */
 
 Layouts.prototype.extendData = function (obj, data) {
-  if (typeof obj.data === 'object') {
-    this.extend(data, obj.data);
-  }
-  delete data.layout;
-  return data;
+  this.extend(data, obj, obj.data);
+
+  // Remove special properties
+  return _.omit(data, ['content', 'layout', 'data']);
 };
 
 
@@ -221,7 +220,7 @@ Layouts.prototype.createStack = function (name) {
 
 Layouts.prototype.stack = function (name, options) {
   var stack = this.createStack(name);
-  var opts = _.extend({}, options);
+  var opts = _.extend(this.options, options);
   var data = {};
 
   var tag = this.makeTag(opts) || this.defaultTag;
@@ -233,16 +232,42 @@ Layouts.prototype.stack = function (name, options) {
 
     return {
       data: this.extendData(tmpl, data),
-      content: content.replace(this.regex, tmpl.content)
+      content: content.replace(this.regex, tmpl.content),
+      regex: this.regex,
+      tag: tag
     };
   }.bind(this), {});
 };
 
 
 /**
+ * ## .replaceTag
+ *
+ * Replace a `{{body}}` tag (or equivalent if custom delims are used) in `content`
+ * with the given `str`.
+ *
+ * **Example:**
+ *
+ * ```js
+ * console.log(layouts.replaceTag('ABC', 'Before {{body}} After'));
+ * //=> 'Before ABC After'
+ * ```
+ *
+ * @param  {String} `str` The string to use as a replacement value.
+ * @param  {String} `content` A string with a `{{body}}` tag where the `str` should be injected.
+ * @return {String} Resulting flattened content.
+ * @api public
+ */
+
+Layouts.prototype.replaceTag = function (str, content, options) {
+  return content.replace(this.makeRegex(options), str);
+};
+
+
+/**
  * ## .inject
  *
- * Flatten nested layouts.
+ * Inject content into a layout stack.
  *
  * **Example:**
  *
@@ -251,9 +276,10 @@ Layouts.prototype.stack = function (name, options) {
  * var tmpl = _.template(page, context);
  * ```
  *
+ * @param  {String} `str` The content to inject into the layout.
  * @param  {String} `name` The layout to start with.
  * @return {String} Resulting flattened layout.
- * @api private
+ * @api public
  */
 
 Layouts.prototype.inject = function (str, name, options) {

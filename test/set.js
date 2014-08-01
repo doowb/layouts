@@ -16,15 +16,15 @@ describe('.set():', function () {
     layouts.set({b: { layout: 'c', content: 'B above\n{{body}}\nB below' }});
     layouts.set({c: { layout: 'd', content: 'C above\n{{body}}\nC below' }});
     layouts.set({d: { layout: 'e', content: 'D above\n{{body}}\nD below' }});
-    layouts.set({base: { layout: undefined, content: 'base!\n{{body}}\nbase!' }});
+    layouts.set({last: { layout: undefined, content: 'last!\n{{body}}\nlast!' }});
     layouts.set({e: { layout: 'f', content: 'E above\n{{body}}\nE below' }});
-    layouts.set({f: { layout: 'base', content: 'F above\n{{body}}\nF below' }});
-    layouts.set({foo: { layout: 'a', content: 'I\'m a <%= title %>' }});
+    layouts.set({f: { layout: 'last', content: 'F above\n{{body}}\nF below' }});
+    layouts.set({first: { layout: 'a', content: 'I\'m a <%= title %>' }});
 
     it('should extend the `cache`.', function () {
-      var actual = layouts.wrap('foo');
+      var actual = layouts.stack('first');
       var expected = [
-        'base!',
+        'last!',
         'F above',
         'E above',
         'D above',
@@ -38,26 +38,26 @@ describe('.set():', function () {
         'D below',
         'E below',
         'F below',
-        'base!'
+        'last!'
       ].join('\n');
       actual.content.should.eql(expected);
     });
   });
 
   describe('when layouts are defined with string values:', function () {
+    layouts.set('first', 'a', 'I\'m a <%= title %>');
     layouts.set('a', 'b', 'A above\n{{body}}\nA below');
     layouts.set('b', 'c', 'B above\n{{body}}\nB below');
     layouts.set('c', 'd', 'C above\n{{body}}\nC below');
     layouts.set('d', 'e', 'D above\n{{body}}\nD below');
-    layouts.set('base', undefined, 'base!\n{{body}}\nbase!');
     layouts.set('e', 'f', 'E above\n{{body}}\nE below');
-    layouts.set('f', 'base', 'F above\n{{body}}\nF below');
-    layouts.set('foo', 'a', 'I\'m a <%= title %>');
+    layouts.set('f', 'last', 'F above\n{{body}}\nF below');
+    layouts.set('last', undefined, 'last!\n{{body}}\nlast!');
 
     it('should extend the `cache`.', function () {
-      var actual = layouts.wrap('foo');
+      var actual = layouts.stack('first');
       var expected = [
-        'base!',
+        'last!',
         'F above',
         'E above',
         'D above',
@@ -71,9 +71,77 @@ describe('.set():', function () {
         'D below',
         'E below',
         'F below',
-        'base!'
+        'last!'
       ].join('\n');
       actual.content.should.eql(expected);
+    });
+  });
+
+  describe('when an object is passed as the second parameter:', function () {
+    describe('when a `layout` propery is defined:', function () {
+      layouts.set('first', {layout: 'a'}, 'I\'m a <%= title %>');
+      layouts.set('a', {layout: 'b'}, 'A above\n{{body}}\nA below');
+      layouts.set('b', {layout: 'c'}, 'B above\n{{body}}\nB below');
+      layouts.set('c', {layout: 'd'}, 'C above\n{{body}}\nC below');
+      layouts.set('d', {layout: 'e'}, 'D above\n{{body}}\nD below');
+      layouts.set('e', {layout: 'f'}, 'E above\n{{body}}\nE below');
+      layouts.set('f', {layout: 'last'}, 'F above\n{{body}}\nF below');
+      layouts.set('last', {layout: undefined}, 'last!\n{{body}}\nlast!');
+
+      it('should extend the `cache` with the layout', function () {
+        var actual = layouts.stack('first');
+        var expected = [
+          'last!',
+          'F above',
+          'E above',
+          'D above',
+          'C above',
+          'B above',
+          'A above',
+          'I\'m a <%= title %>', // should not be compiled
+          'A below',
+          'B below',
+          'C below',
+          'D below',
+          'E below',
+          'F below',
+          'last!'
+        ].join('\n');
+        actual.content.should.eql(expected);
+      });
+    });
+
+    describe('when a `content` propery is defined:', function () {
+      layouts.set('first', {layout: 'a', content: 'I\'m a <%= title %>'});
+      layouts.set('a', {layout: 'b', content: 'A above\n{{body}}\nA below'});
+      layouts.set('b', {layout: 'c', content: 'B above\n{{body}}\nB below'});
+      layouts.set('c', {layout: 'd', content: 'C above\n{{body}}\nC below'});
+      layouts.set('d', {layout: 'e', content: 'D above\n{{body}}\nD below'});
+      layouts.set('e', {layout: 'f', content: 'E above\n{{body}}\nE below'});
+      layouts.set('f', {layout: 'last', content: 'F above\n{{body}}\nF below'});
+      layouts.set('last', {layout: undefined, content: 'last!\n{{body}}\nlast!'});
+
+      it('should extend the `cache` with the layout', function () {
+        var actual = layouts.stack('first');
+        var expected = [
+          'last!',
+          'F above',
+          'E above',
+          'D above',
+          'C above',
+          'B above',
+          'A above',
+          'I\'m a <%= title %>', // should not be compiled
+          'A below',
+          'B below',
+          'C below',
+          'D below',
+          'E below',
+          'F below',
+          'last!'
+        ].join('\n');
+        actual.content.should.eql(expected);
+      });
     });
   });
 });

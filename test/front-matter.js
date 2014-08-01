@@ -32,7 +32,7 @@ describe('when nested layouts are defined in front-matter:', function () {
   it('should recursively inject content from each file into its layout.', function () {
 
     // Define the name of the cached template to start with
-    var actual = layouts.wrap('simple');
+    var actual = layouts.stack('simple');
     var expected = [
       'base!',
       'I\'m a simple page.',
@@ -45,7 +45,7 @@ describe('when nested layouts are defined in front-matter:', function () {
   it('should recursively inject content from each file into its layout.', function () {
 
     // Define the name of the cached template to start with
-    var actual = layouts.wrap('foo');
+    var actual = layouts.stack('foo');
     var expected = [
       'base!',
       'F above',

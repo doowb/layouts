@@ -14,21 +14,21 @@ describe('layouts options', function () {
   describe('options.extend', function () {
     describe('when NO custom `extend` function is passed', function () {
       var layouts = new Layouts();
+      layouts.set('first', 'a', '{{body}}');
       layouts.set('a', {layout: 'b', xyz: 'aaa', one: 'two'}, 'A above\n{{body}}\nA below');
-      layouts.set('b', {layout: 'base', xyz: 'bbb', three: 'four'}, 'B above\n{{body}}\nB below');
-      layouts.set('base', {xyz: 'zzz'}, 'base!\n{{body}}\nbase!');
-      layouts.set('foo', 'a', 'I\'m a <%= title %>');
+      layouts.set('b', {layout: 'last', xyz: 'bbb', three: 'four'}, 'B above\n{{body}}\nB below');
+      layouts.set('last', {xyz: 'zzz'}, 'last!\n{{body}}\nlast!');
 
       it('should merge the context so that the inner-most templates context wins.', function () {
-        var actual = layouts.wrap('foo');
+        var actual = layouts.stack('first');
         var expected = [
-          'base!',
+          'last!',
           'B above',
           'A above',
-          'I\'m a <%= title %>',
+          '{{body}}',
           'A below',
           'B below',
-          'base!'
+          'last!'
         ].join('\n');
         actual.content.should.eql(expected);
         actual.data.should.eql({xyz: 'aaa', one: 'two', three: 'four'});
@@ -38,20 +38,20 @@ describe('layouts options', function () {
     describe('when a custom `extend` function is passed', function () {
       var layouts = new Layouts({extend: _.defaults});
       layouts.set('a', {layout: 'b', xyz: 'aaa', one: 'two'}, 'A above\n{{body}}\nA below');
-      layouts.set('b', {layout: 'base', xyz: 'bbb', three: 'four'}, 'B above\n{{body}}\nB below');
-      layouts.set('base', {xyz: 'zzz'}, 'base!\n{{body}}\nbase!');
-      layouts.set('foo', 'a', 'I\'m a <%= title %>');
+      layouts.set('b', {layout: 'last', xyz: 'bbb', three: 'four'}, 'B above\n{{body}}\nB below');
+      layouts.set('last', {xyz: 'zzz'}, 'last!\n{{body}}\nlast!');
+      layouts.set('first', 'a', '{{body}}');
 
       it('should change the order in which the context is merged.', function () {
-        var actual = layouts.wrap('foo');
+        var actual = layouts.stack('first');
         var expected = [
-          'base!',
+          'last!',
           'B above',
           'A above',
-          'I\'m a <%= title %>',
+          '{{body}}',
           'A below',
           'B below',
-          'base!'
+          'last!'
         ].join('\n');
         actual.content.should.eql(expected);
         actual.data.should.eql({xyz: 'zzz', one: 'two', three: 'four'});

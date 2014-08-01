@@ -1,7 +1,7 @@
 {
   "name": "layouts",
-  "description": "Wrap templates with layouts. Layouts can use/refer to other layouts, allowing them to be nested.",
-  "version": "0.1.0",
+  "description": "Wrap templates with layouts. Layouts can be nested and optionally use other layouts.",
+  "version": "0.2.1",
   "homepage": "https://github.com/jonschlinkert/layouts",
   "author": {
     "name": "Jon Schlinkert",
@@ -44,10 +44,14 @@
     "lodash",
     "mote",
     "mustache",
+    "nest",
+    "nested",
     "nunjucks",
     "page",
     "qejs",
     "ractive",
+    "stack",
+    "stacked",
     "swig",
     "template",
     "templates",
@@ -57,7 +61,8 @@
     "transformers",
     "underscore",
     "walrus",
-    "whiskers"
+    "whiskers",
+    "wrap"
   ],
   "main": "index.js",
   "engines": {

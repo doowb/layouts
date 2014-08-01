@@ -30,17 +30,12 @@ var _ = require('lodash');
  * @param {String} `options.tag` The tag name to use. Default is `body` (e.g. `{{ body }}`)
  */
 
-var Layouts = module.exports = function Layouts(options) {
-  var opts = _.defaults({}, options, {
-    delims: ['{{', '}}'],
-    tag: 'body'
-  });
-
-  this.cache = opts.cache || {};
-  this.extend = opts.extend || _.extend;
-  this.defaultTag = this.makeTag(opts)
-  this.options = opts;
-};
+function Layouts(options) {
+  this.options = _.extend({}, options);
+  this.defaultTag = this.makeTag(this.options);
+  this.extend = this.options.extend || _.extend;
+  this.cache = this.options.cache || {};
+}
 
 
 /**
@@ -55,7 +50,10 @@ var Layouts = module.exports = function Layouts(options) {
  */
 
 Layouts.prototype.makeTag = function (options) {
-  var opts = _.defaults({}, options, this.options);
+  var opts = _.extend({}, this.options, options);
+  opts.delims = opts.delims || ['{{', '}}'];
+  opts.tag = opts.tag || 'body';
+
   return [
     opts.delims[0],
     opts.tag,
@@ -289,3 +287,6 @@ Layouts.prototype.inject = function (str, name, options) {
   }
   return {data: layout.data, content: str};
 };
+
+
+module.exports = Layouts;

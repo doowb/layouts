@@ -35,6 +35,7 @@ function Layouts(options) {
   this.defaultTag = this.makeTag(this.options);
   this.extend = this.options.extend || _.extend;
   this.cache = this.options.cache || {};
+  this.context = {};
 }
 
 
@@ -148,11 +149,10 @@ Layouts.prototype.get = function (name) {
  * @api private
  */
 
-Layouts.prototype.extendData = function (obj, data) {
-  this.extend(data, obj, obj.data);
-
-  // Remove special properties
-  return _.omit(data, ['content', 'layout', 'data']);
+Layouts.prototype.extendData = function (tmpl, opts) {
+  _.extend(this.context, tmpl, tmpl.data, opts, opts.locals);
+  _.omit(this.context, ['delims', 'layout', 'data', 'locals']);
+  return this;
 };
 
 
@@ -228,8 +228,9 @@ Layouts.prototype.stack = function (name, options) {
     var content = acc.content || tag;
     var tmpl = this.cache[layout];
 
+    this.extendData(tmpl, opts);
     return {
-      data: this.extendData(tmpl, data),
+      data: this.context,
       content: content.replace(this.regex, tmpl.content),
       regex: this.regex,
       tag: tag
@@ -285,8 +286,10 @@ Layouts.prototype.inject = function (str, name, options) {
   if (layout.content) {
     str = layout.content.replace(this.regex, str);
   }
-  return {data: layout.data, content: str};
+  return _.extend(layout, {
+    data: layout.data,
+    content: str
+  });
 };
-
 
 module.exports = Layouts;

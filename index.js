@@ -9,7 +9,7 @@
 
 var isFalsey = require('falsey');
 var _ = require('lodash');
-
+var noop = _.template;
 
 /**
  * ## Layouts
@@ -219,6 +219,7 @@ Layouts.prototype.createStack = function (name) {
 Layouts.prototype.stack = function (name, options) {
   var stack = this.createStack(name);
   var opts = _.extend(this.options, options);
+  var fn = opts.fn || noop;
   var data = {};
 
   var tag = this.makeTag(opts) || this.defaultTag;
@@ -226,12 +227,17 @@ Layouts.prototype.stack = function (name, options) {
 
   return _.reduce(stack, function (acc, layout) {
     var content = acc.content || tag;
-    var tmpl = this.cache[layout];
+    var obj = this.cache[layout];
 
-    this.extendData(tmpl, opts);
+    this.extendData(obj, opts);
+    _.extend(this.context, {body: obj.content});
+
+    console.log(this.context)
+
+    // var str = content.replace(this.regex, obj.content);
     return {
       data: this.context,
-      content: content.replace(this.regex, tmpl.content),
+      content: fn(content, this.context, opts),
       regex: this.regex,
       tag: tag
     };

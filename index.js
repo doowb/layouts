@@ -35,7 +35,6 @@ function Layouts(options) {
   this.defaultTag = this.makeTag(this.options);
   this.extend = this.options.extend || _.extend;
   this.cache = this.options.cache || {};
-  this.context = {};
 }
 
 
@@ -52,7 +51,7 @@ function Layouts(options) {
 
 Layouts.prototype.makeTag = function (options) {
   var opts = _.extend({}, this.options, options);
-  opts.delims = opts.delims || ['{{', '}}'];
+  opts.delims = opts.delims || ['{%', '%}'];
   opts.tag = opts.tag || 'body';
 
   return [
@@ -141,7 +140,7 @@ Layouts.prototype.get = function (name) {
 /**
  * ## .extendData
  *
- * Extend `data` with the given `obj. A custom function can be
+ * Extend `data` with the given `obj`. A custom function can be
  * passed on `options.extend` to change how data is merged.
  *
  * @param  {*} `value`
@@ -150,9 +149,11 @@ Layouts.prototype.get = function (name) {
  */
 
 Layouts.prototype.extendData = function (tmpl, opts) {
-  _.extend(this.context, tmpl, tmpl.data, opts, opts.locals);
-  _.omit(this.context, ['delims', 'layout', 'data', 'locals']);
-  return this;
+  // _.extend(this.context, tmpl, tmpl.data, opts, opts.locals);
+  // _.omit(this.context, ['delims', 'layout', 'data', 'locals']);
+  // return this;
+  this.extend(opts, tmpl, tmpl.data);
+  return _.omit(opts, ['content', 'layout', 'data']);
 };
 
 
@@ -229,15 +230,21 @@ Layouts.prototype.stack = function (name, options) {
     var content = acc.content || tag;
     var obj = this.cache[layout];
 
-    this.extendData(obj, opts);
-    _.extend(this.context, {body: obj.content});
+    // this.extendData(obj, opts);
+    // _.extend(this.context, {body: obj.content});
 
-    console.log(this.context)
+    // console.log(this.context)
+    // /<%=([\s\S]+?)%>/g
 
+    opts.interpolate = /{%([\s\S]+?)%}/g;
+    data.body = obj.content;
+    var ctx = this.extendData(obj, data);
+    var str = fn(content, ctx, opts);
+    delete ctx.body;
     // var str = content.replace(this.regex, obj.content);
     return {
-      data: this.context,
-      content: fn(content, this.context, opts),
+      data: ctx,
+      content: str,
       regex: this.regex,
       tag: tag
     };

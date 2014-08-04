@@ -15,14 +15,14 @@ describe('.inject():', function () {
   describe('when layouts are defined as objects:', function () {
     var layouts = new Layouts();
 
-    layouts.set({a: { layout: 'b', content: 'A above\n{{body}}\nA below' }});
-    layouts.set({b: { layout: 'c', content: 'B above\n{{body}}\nB below' }});
-    layouts.set({c: { layout: 'd', content: 'C above\n{{body}}\nC below' }});
-    layouts.set({d: { layout: 'e', content: 'D above\n{{body}}\nD below' }});
-    layouts.set({last: { layout: undefined, content: 'last!\n{{body}}\nlast!' }});
-    layouts.set({e: { layout: 'f', content: 'E above\n{{body}}\nE below' }});
-    layouts.set({f: { layout: 'last', content: 'F above\n{{body}}\nF below' }});
-    layouts.set({first: { layout: 'a', content: '{{body}}' }});
+    layouts.set({a: { layout: 'b', content: 'A above\n{%body%}\nA below' }});
+    layouts.set({b: { layout: 'c', content: 'B above\n{%body%}\nB below' }});
+    layouts.set({c: { layout: 'd', content: 'C above\n{%body%}\nC below' }});
+    layouts.set({d: { layout: 'e', content: 'D above\n{%body%}\nD below' }});
+    layouts.set({last: { layout: undefined, content: 'last!\n{%body%}\nlast!' }});
+    layouts.set({e: { layout: 'f', content: 'E above\n{%body%}\nE below' }});
+    layouts.set({f: { layout: 'last', content: 'F above\n{%body%}\nF below' }});
+    layouts.set({first: { layout: 'a', content: '{%body%}' }});
 
     it('should inject content into a layout.', function () {
       var stack = layouts.inject('fooo', 'first');
@@ -34,7 +34,7 @@ describe('.inject():', function () {
         'C above',
         'B above',
         'A above',
-        '{{body}}', // last {{body}} tag should be unprocessed
+        '{%body%}', // last {%body%} tag should be unprocessed
         'A below',
         'B below',
         'C below',
@@ -51,23 +51,23 @@ describe('.inject():', function () {
   describe('when layouts are defined with string values:', function () {
     var layouts = new Layouts();
 
-    layouts.set('first', 'a', '{{body}}');
-    layouts.set('a', 'b', 'A above\n{{body}}\nA below');
-    layouts.set('b', 'c', 'B above\n{{body}}\nB below');
-    layouts.set('c', 'd', 'C above\n{{body}}\nC below');
-    layouts.set('d', 'e', 'D above\n{{body}}\nD below');
-    layouts.set('e', '', 'E above\n{{body}}\nE below');
-    layouts.set('last', undefined, 'last!\n{{body}}\nlast!');
+    layouts.set('first', 'a', '{%body%}');
+    layouts.set('a', 'b', 'A above\n{%body%}\nA below');
+    layouts.set('b', 'c', 'B above\n{%body%}\nB below');
+    layouts.set('c', 'd', 'C above\n{%body%}\nC below');
+    layouts.set('d', 'e', 'D above\n{%body%}\nD below');
+    layouts.set('e', '', 'E above\n{%body%}\nE below');
+    layouts.set('last', undefined, 'last!\n{%body%}\nlast!');
 
     it('should extend the `cache`.', function () {
-      var actual = layouts.inject('Last! {{body}}', 'first');
+      var actual = layouts.inject('Last! {%body%}', 'first');
       var expected = [
         'E above',
         'D above',
         'C above',
         'B above',
         'A above',
-        'Last! {{body}}', // last {{body}} tag should be unprocessed
+        'Last! {%body%}', // last {%body%} tag should be unprocessed
         'A below',
         'B below',
         'C below',

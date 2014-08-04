@@ -31,7 +31,7 @@ describe('.data()', function () {
       'C above',
       'B above',
       'A above',
-      '{%body%}', // should not be compiled
+      '{% body %}', // should not be compiled
       'A below',
       'B below',
       'C below',

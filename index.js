@@ -229,6 +229,7 @@ Layouts.prototype.stack = function (name, options) {
   return _.reduce(stack, function (acc, layout) {
     var content = acc.content || tag;
     var obj = this.cache[layout];
+    var bodyTag = this.options.tag || opts.tag || 'body';
 
     // this.extendData(obj, opts);
     // _.extend(this.context, {body: obj.content});
@@ -236,15 +237,23 @@ Layouts.prototype.stack = function (name, options) {
     // console.log(this.context)
     // /<%=([\s\S]+?)%>/g
 
+    opts.evaluate = /{%([\s\S]+?)%}/g;
     opts.interpolate = /{%([\s\S]+?)%}/g;
-    data.body = obj.content;
     var ctx = this.extendData(obj, data);
-    var str = fn(content, ctx, opts);
-    delete ctx.body;
-    // var str = content.replace(this.regex, obj.content);
+
+    // var str = fn(obj.content, ctx, opts);
+    // replace the inner content based on regex
+    var str = content.replace(this.regex, obj.content);
+    // make sure the body tag is actual the body tag
+    ctx[bodyTag] = tag;
+    // run the new template string through a renderer
+    var tmpl = fn(str, ctx, opts);
+    // remove the body tag
+    delete ctx[bodyTag];
+
     return {
       data: ctx,
-      content: str,
+      content: tmpl,
       regex: this.regex,
       tag: tag
     };

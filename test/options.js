@@ -25,7 +25,7 @@ describe('layouts options', function () {
           'last!',
           'B above',
           'A above',
-          '{%body%}',
+          '{% body %}',
           'A below',
           'B below',
           'last!'
@@ -48,7 +48,7 @@ describe('layouts options', function () {
           'last!',
           'B above',
           'A above',
-          '{%body%}',
+          '{% body %}',
           'A below',
           'B below',
           'last!'

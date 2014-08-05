@@ -28,17 +28,17 @@ describe('layouts cache', function () {
     Object.keys(layouts.cache).length.should.eql(8);
   });
 
-  it('should add layouts to the cache when using `.set()`.', function () {
+  it('should add layouts to the cache when using `.setLayout()`.', function () {
     var layouts = new Layouts();
 
-    layouts.set('first', 'a', 'I\'m a <%= title %>');
-    layouts.set('a', 'b', 'A above\n{{body}}\nA below');
-    layouts.set('b', 'c', 'B above\n{{body}}\nB below');
-    layouts.set('c', 'd', 'C above\n{{body}}\nC below');
-    layouts.set('d', 'e', 'D above\n{{body}}\nD below');
-    layouts.set('e', 'f', 'E above\n{{body}}\nE below');
-    layouts.set('f', 'last', 'F above\n{{body}}\nF below');
-    layouts.set('last', undefined, 'last!\n{{body}}\nlast!');
+    layouts.setLayout('first', 'a', 'I\'m a <%= title %>');
+    layouts.setLayout('a', 'b', 'A above\n{{body}}\nA below');
+    layouts.setLayout('b', 'c', 'B above\n{{body}}\nB below');
+    layouts.setLayout('c', 'd', 'C above\n{{body}}\nC below');
+    layouts.setLayout('d', 'e', 'D above\n{{body}}\nD below');
+    layouts.setLayout('e', 'f', 'E above\n{{body}}\nE below');
+    layouts.setLayout('f', 'last', 'F above\n{{body}}\nF below');
+    layouts.setLayout('last', undefined, 'last!\n{{body}}\nlast!');
 
     Object.keys(layouts.cache).length.should.eql(8);
   });

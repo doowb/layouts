@@ -39,6 +39,11 @@ function Layouts(options) {
   this.extend = this.options.extend || _.extend;
   _.extend(this.cache, this.options.cache, this.options.layouts);
   this.context = _.extend({}, this.options.locals);
+
+  delete this.options.cache;
+  delete this.cache.data;
+
+  this.flattenData(this.cache, 'cache');
 }
 
 util.inherits(Layouts, Cache);
@@ -234,6 +239,7 @@ Layouts.prototype.stack = function (name, options) {
     var content = acc.content || tag;
     var tmpl = this.cache[layout];
     this.extendData(opts, tmpl);
+    this.flattenData(this.context);
 
     return {
       data: this.context,

@@ -39,7 +39,6 @@ describe('layouts cache', function () {
     layouts.setLayout('e', 'f', 'E above\n{{body}}\nE below');
     layouts.setLayout('f', 'last', 'F above\n{{body}}\nF below');
     layouts.setLayout('last', undefined, 'last!\n{{body}}\nlast!');
-
     Object.keys(layouts.cache).length.should.eql(8);
   });
 });

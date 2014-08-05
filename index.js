@@ -36,7 +36,7 @@ function Layouts(options) {
   Cache.call(this, options);
   this.options = _.extend({}, options);
   this.defaultTag = this.makeTag(this.options);
-  this.extend = this.options.extend || _.extend;
+  this.mergeData = this.options.extend || _.extend;
   _.extend(this.cache, this.options.cache, this.options.layouts);
   this.context = _.extend({}, this.options.locals);
 
@@ -171,7 +171,7 @@ Layouts.prototype.assertLayout = function (value) {
 
 
 /**
- * ## .extendData
+ * ## .mergeData
  *
  * Extend `data` with the given `obj. A custom function can be
  * passed on `options.extend` to change how data is merged.
@@ -181,9 +181,11 @@ Layouts.prototype.assertLayout = function (value) {
  * @api private
  */
 
-Layouts.prototype.extendData = function (opts, tmpl) {
-  _.extend(this.context, opts, opts.locals, tmpl, tmpl.data);
-  this.context = _.omit(this.context, ['content', 'delims', 'layout', 'data', 'locals']);
+Layouts.prototype._mergeData = function (opts, tmpl) {
+  this.mergeData(this.context, opts, opts.locals, tmpl, tmpl.data);
+  var omit = ['extend', 'content', 'delims', 'layout', 'data', 'locals'];
+  this.context = _.omit(this.context, omit);
+  this.flattenData(this.context);
   return this;
 };
 
@@ -238,8 +240,7 @@ Layouts.prototype.stack = function (name, options) {
   return _.reduce(stack, function (acc, layout) {
     var content = acc.content || tag;
     var tmpl = this.cache[layout];
-    this.extendData(opts, tmpl);
-    this.flattenData(this.context);
+    this._mergeData(opts, tmpl);
 
     return {
       data: this.context,

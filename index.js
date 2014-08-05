@@ -7,9 +7,11 @@
 
 'use strict';
 
+var util = require('util');
 var isFalsey = require('falsey');
+var Cache = require('config-cache');
 var _ = require('lodash');
-var noop = _.template;
+
 
 /**
  * ## Layouts
@@ -31,12 +33,15 @@ var noop = _.template;
  */
 
 function Layouts(options) {
+  Cache.call(this, options);
   this.options = _.extend({}, options);
   this.defaultTag = this.makeTag(this.options);
   this.extend = this.options.extend || _.extend;
-  this.cache = this.options.cache || {};
-  this.context = {};
+  _.extend(this.cache, this.options.cache, this.options.layouts);
+  this.context = _.extend({}, this.options.locals);
 }
+
+util.inherits(Layouts, Cache);
 
 
 /**
@@ -82,7 +87,7 @@ Layouts.prototype.makeRegex = function (options) {
 
 
 /**
- * ## .set
+ * ## .setLayout
  *
  * Store a template on the cache by its `name`, the `layout` to use,
  * and the template's `content.
@@ -90,7 +95,7 @@ Layouts.prototype.makeRegex = function (options) {
  * **Example:**
  *
  * ```js
- * layouts.set('a', 'b', '<h1>Foo</h1>\n{{body}}\n');
+ * layouts.setLayout('a', 'b', '<h1>Foo</h1>\n{{body}}\n');
  * ```
  *
  * @param {String|Object} `name` If `name` is a string, `layout` and `content` are required.
@@ -100,29 +105,31 @@ Layouts.prototype.makeRegex = function (options) {
  * @api public
  */
 
-Layouts.prototype.set = function (name, data, content) {
+Layouts.prototype.setLayout = function (name, data, content) {
   if (arguments.length === 1 && typeof name === 'object') {
     _.extend(this.cache, name);
     return this;
   }
+
   this.cache[name] = {
     layout: (data && data.layout) ? data.layout : data,
     content: (data && data.content) ? data.content : content,
     data: data
   };
+
   return this;
 };
 
 
 /**
- * ## .get
+ * ## .getLayout
  *
  * Get a cached template by `name`.
  *
  * **Example:**
  *
  * ```js
- * layouts.get('a');
+ * layouts.getLayout('a');
  * //=> { layout: 'b', content: '<h1>Foo</h1>\n{{body}}\n' }
  * ```
  *
@@ -130,31 +137,12 @@ Layouts.prototype.set = function (name, data, content) {
  * @return {Object} The template object to return.
  */
 
-Layouts.prototype.get = function (name) {
+Layouts.prototype.getLayout = function (name) {
   if (!name) {
     return this.cache;
   }
   return this.cache[name];
 };
-
-
-/**
- * ## .extendData
- *
- * Extend `data` with the given `obj. A custom function can be
- * passed on `options.extend` to change how data is merged.
- *
- * @param  {*} `value`
- * @return {String|Null} Returns `true` or `null`.
- * @api private
- */
-
-Layouts.prototype.extendData = function (tmpl, opts) {
-  _.extend(this.context, tmpl, tmpl.data, opts, opts.locals);
-  _.omit(this.context, ['delims', 'layout', 'data', 'locals']);
-  return this;
-};
-
 
 
 /**
@@ -174,6 +162,24 @@ Layouts.prototype.assertLayout = function (value) {
     return null;
   }
   return value;
+};
+
+
+/**
+ * ## .extendData
+ *
+ * Extend `data` with the given `obj. A custom function can be
+ * passed on `options.extend` to change how data is merged.
+ *
+ * @param  {*} `value`
+ * @return {String|Null} Returns `true` or `null`.
+ * @api private
+ */
+
+Layouts.prototype.extendData = function (opts, tmpl) {
+  _.extend(this.context, opts, opts.locals, tmpl, tmpl.data);
+  this.context = _.omit(this.context, ['content', 'delims', 'layout', 'data', 'locals']);
+  return this;
 };
 
 
@@ -219,7 +225,6 @@ Layouts.prototype.createStack = function (name) {
 Layouts.prototype.stack = function (name, options) {
   var stack = this.createStack(name);
   var opts = _.extend(this.options, options);
-  var fn = opts.fn || noop;
   var data = {};
 
   var tag = this.makeTag(opts) || this.defaultTag;
@@ -227,17 +232,12 @@ Layouts.prototype.stack = function (name, options) {
 
   return _.reduce(stack, function (acc, layout) {
     var content = acc.content || tag;
-    var obj = this.cache[layout];
+    var tmpl = this.cache[layout];
+    this.extendData(opts, tmpl);
 
-    this.extendData(obj, opts);
-    _.extend(this.context, {body: obj.content});
-
-    console.log(this.context)
-
-    // var str = content.replace(this.regex, obj.content);
     return {
       data: this.context,
-      content: fn(content, this.context, opts),
+      content: content.replace(this.regex, tmpl.content),
       regex: this.regex,
       tag: tag
     };
@@ -292,10 +292,8 @@ Layouts.prototype.inject = function (str, name, options) {
   if (layout.content) {
     str = layout.content.replace(this.regex, str);
   }
-  return _.extend(layout, {
-    data: layout.data,
-    content: str
-  });
+  return {data: layout.data, content: str};
 };
+
 
 module.exports = Layouts;

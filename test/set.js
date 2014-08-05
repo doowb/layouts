@@ -10,18 +10,18 @@ var Layouts = require('..');
 var layouts = new Layouts();
 
 
-describe('.set():', function () {
+describe('.setLayout():', function () {
   describe('when layouts are defined as objects:', function () {
     var layouts = new Layouts();
 
-    layouts.set({a: { layout: 'b', content: 'A above\n{{body}}\nA below' }});
-    layouts.set({b: { layout: 'c', content: 'B above\n{{body}}\nB below' }});
-    layouts.set({c: { layout: 'd', content: 'C above\n{{body}}\nC below' }});
-    layouts.set({d: { layout: 'e', content: 'D above\n{{body}}\nD below' }});
-    layouts.set({last: { layout: undefined, content: 'last!\n{{body}}\nlast!' }});
-    layouts.set({e: { layout: 'f', content: 'E above\n{{body}}\nE below' }});
-    layouts.set({f: { layout: 'last', content: 'F above\n{{body}}\nF below' }});
-    layouts.set({first: { layout: 'a', content: 'I\'m a <%= title %>' }});
+    layouts.setLayout({a: { layout: 'b', content: 'A above\n{{body}}\nA below' }});
+    layouts.setLayout({b: { layout: 'c', content: 'B above\n{{body}}\nB below' }});
+    layouts.setLayout({c: { layout: 'd', content: 'C above\n{{body}}\nC below' }});
+    layouts.setLayout({d: { layout: 'e', content: 'D above\n{{body}}\nD below' }});
+    layouts.setLayout({last: { layout: undefined, content: 'last!\n{{body}}\nlast!' }});
+    layouts.setLayout({e: { layout: 'f', content: 'E above\n{{body}}\nE below' }});
+    layouts.setLayout({f: { layout: 'last', content: 'F above\n{{body}}\nF below' }});
+    layouts.setLayout({first: { layout: 'a', content: 'I\'m a <%= title %>' }});
 
     it('should extend the `cache`.', function () {
       var actual = layouts.stack('first');
@@ -49,14 +49,14 @@ describe('.set():', function () {
   describe('when layouts are defined with string values:', function () {
     var layouts = new Layouts();
 
-    layouts.set('first', 'a', 'I\'m a <%= title %>');
-    layouts.set('a', 'b', 'A above\n{{body}}\nA below');
-    layouts.set('b', 'c', 'B above\n{{body}}\nB below');
-    layouts.set('c', 'd', 'C above\n{{body}}\nC below');
-    layouts.set('d', 'e', 'D above\n{{body}}\nD below');
-    layouts.set('e', 'f', 'E above\n{{body}}\nE below');
-    layouts.set('f', 'last', 'F above\n{{body}}\nF below');
-    layouts.set('last', undefined, 'last!\n{{body}}\nlast!');
+    layouts.setLayout('first', 'a', 'I\'m a <%= title %>');
+    layouts.setLayout('a', 'b', 'A above\n{{body}}\nA below');
+    layouts.setLayout('b', 'c', 'B above\n{{body}}\nB below');
+    layouts.setLayout('c', 'd', 'C above\n{{body}}\nC below');
+    layouts.setLayout('d', 'e', 'D above\n{{body}}\nD below');
+    layouts.setLayout('e', 'f', 'E above\n{{body}}\nE below');
+    layouts.setLayout('f', 'last', 'F above\n{{body}}\nF below');
+    layouts.setLayout('last', undefined, 'last!\n{{body}}\nlast!');
 
     it('should extend the `cache`.', function () {
       var actual = layouts.stack('first');
@@ -85,14 +85,14 @@ describe('.set():', function () {
     describe('when a `layout` propery is defined:', function () {
       var layouts = new Layouts();
 
-      layouts.set('first', {layout: 'a'}, 'I\'m a <%= title %>');
-      layouts.set('a', {layout: 'b'}, 'A above\n{{body}}\nA below');
-      layouts.set('b', {layout: 'c'}, 'B above\n{{body}}\nB below');
-      layouts.set('c', {layout: 'd'}, 'C above\n{{body}}\nC below');
-      layouts.set('d', {layout: 'e'}, 'D above\n{{body}}\nD below');
-      layouts.set('e', {layout: 'f'}, 'E above\n{{body}}\nE below');
-      layouts.set('f', {layout: 'last'}, 'F above\n{{body}}\nF below');
-      layouts.set('last', {layout: undefined}, 'last!\n{{body}}\nlast!');
+      layouts.setLayout('first', {layout: 'a'}, 'I\'m a <%= title %>');
+      layouts.setLayout('a', {layout: 'b'}, 'A above\n{{body}}\nA below');
+      layouts.setLayout('b', {layout: 'c'}, 'B above\n{{body}}\nB below');
+      layouts.setLayout('c', {layout: 'd'}, 'C above\n{{body}}\nC below');
+      layouts.setLayout('d', {layout: 'e'}, 'D above\n{{body}}\nD below');
+      layouts.setLayout('e', {layout: 'f'}, 'E above\n{{body}}\nE below');
+      layouts.setLayout('f', {layout: 'last'}, 'F above\n{{body}}\nF below');
+      layouts.setLayout('last', {layout: undefined}, 'last!\n{{body}}\nlast!');
 
       it('should extend the `cache` with the layout', function () {
         var actual = layouts.stack('first');
@@ -120,14 +120,14 @@ describe('.set():', function () {
     describe('when a `content` propery is defined:', function () {
       var layouts = new Layouts();
 
-      layouts.set('first', {layout: 'a', content: 'I\'m a <%= title %>'});
-      layouts.set('a', {layout: 'b', content: 'A above\n{{body}}\nA below'});
-      layouts.set('b', {layout: 'c', content: 'B above\n{{body}}\nB below'});
-      layouts.set('c', {layout: 'd', content: 'C above\n{{body}}\nC below'});
-      layouts.set('d', {layout: 'e', content: 'D above\n{{body}}\nD below'});
-      layouts.set('e', {layout: 'f', content: 'E above\n{{body}}\nE below'});
-      layouts.set('f', {layout: 'last', content: 'F above\n{{body}}\nF below'});
-      layouts.set('last', {layout: undefined, content: 'last!\n{{body}}\nlast!'});
+      layouts.setLayout('first', {layout: 'a', content: 'I\'m a <%= title %>'});
+      layouts.setLayout('a', {layout: 'b', content: 'A above\n{{body}}\nA below'});
+      layouts.setLayout('b', {layout: 'c', content: 'B above\n{{body}}\nB below'});
+      layouts.setLayout('c', {layout: 'd', content: 'C above\n{{body}}\nC below'});
+      layouts.setLayout('d', {layout: 'e', content: 'D above\n{{body}}\nD below'});
+      layouts.setLayout('e', {layout: 'f', content: 'E above\n{{body}}\nE below'});
+      layouts.setLayout('f', {layout: 'last', content: 'F above\n{{body}}\nF below'});
+      layouts.setLayout('last', {layout: undefined, content: 'last!\n{{body}}\nlast!'});
 
       it('should extend the `cache` with the layout', function () {
         var actual = layouts.stack('first');
@@ -155,7 +155,7 @@ describe('.set():', function () {
     describe('when multiple layouts are defined', function () {
       var layouts = new Layouts();
 
-      layouts.set({
+      layouts.setLayout({
         a: { layout: 'b', content: 'A above\n{{body}}\nA below' },
         b: { layout: 'c', content: 'B above\n{{body}}\nB below' },
         c: { layout: 'd', content: 'C above\n{{body}}\nC below' },

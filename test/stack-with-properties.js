@@ -11,18 +11,18 @@ var should = require('should');
 var Layouts = require('..');
 
 
-describe('.stack():', function () {
+describe('.stack() with properties:', function () {
   describe('when layouts are defined as objects with their own properties:', function () {
     var layouts = new Layouts();
 
-    layouts.set({first: { layout: 'a', content: '{{body}}' }});
-    layouts.set({a: { layout: 'b', a: 'b', title: 'A', content: '{{ title }} above\n{{body}}\n{{ title }} below' }});
-    layouts.set({b: { layout: 'c', c: 'd', title: 'B', content: '{{ title }} above\n{{body}}\n{{ title }} below' }});
-    layouts.set({c: { layout: 'd', e: 'f', title: 'C', content: '{{ title }} above\n{{body}}\n{{ title }} below' }});
-    layouts.set({d: { layout: 'e', g: 'h', title: 'D', content: '{{ title }} above\n{{body}}\n{{ title }} below' }});
-    layouts.set({e: { layout: 'f', i: 'j', title: 'E', content: '{{ title }} above\n{{body}}\n{{ title }} below' }});
-    layouts.set({f: { layout: 'last', data: {one: 'two'}, title: 'F', content: '{{ title }} above\n{{body}}\n{{ title }} below' }});
-    layouts.set({last: { layout: undefined, content: 'last!\n{{body}}\nlast!' }});
+    layouts.setLayout({first: { layout: 'a', content: '{{body}}' }});
+    layouts.setLayout({a: { layout: 'b', a: 'b', title: 'A', content: '{{ title }} above\n{{body}}\n{{ title }} below' }});
+    layouts.setLayout({b: { layout: 'c', c: 'd', title: 'B', content: '{{ title }} above\n{{body}}\n{{ title }} below' }});
+    layouts.setLayout({c: { layout: 'd', e: 'f', title: 'C', content: '{{ title }} above\n{{body}}\n{{ title }} below' }});
+    layouts.setLayout({d: { layout: 'e', g: 'h', title: 'D', content: '{{ title }} above\n{{body}}\n{{ title }} below' }});
+    layouts.setLayout({e: { layout: 'f', i: 'j', title: 'E', content: '{{ title }} above\n{{body}}\n{{ title }} below' }});
+    layouts.setLayout({f: { layout: 'last', data: {one: 'two'}, title: 'F', content: '{{ title }} above\n{{body}}\n{{ title }} below' }});
+    layouts.setLayout({last: { layout: undefined, content: 'last!\n{{body}}\nlast!' }});
 
     it('should return a layout stack.', function () {
       var stack = layouts.stack('first');
@@ -60,19 +60,19 @@ describe('.stack():', function () {
     });
   });
 
-  xdescribe('when layouts are defined with string values:', function () {
+  describe('when layouts are defined with string values:', function () {
     var layouts = new Layouts();
 
-    layouts.set('first', 'a', '{{body}}');
-    layouts.set('a', 'b', 'A above\n{{body}}\nA below');
-    layouts.set('b', 'c', 'B above\n{{body}}\nB below');
-    layouts.set('c', 'd', 'C above\n{{body}}\nC below');
-    layouts.set('d', 'e', 'D above\n{{body}}\nD below');
-    layouts.set('e', 'f', 'E above\n{{body}}\nE below');
-    layouts.set('f', 'last', 'F above\n{{body}}\nF below');
-    layouts.set('last', undefined, 'last!\n{{body}}\nlast!');
+    layouts.setLayout('first', 'a', '{{body}}');
+    layouts.setLayout('a', 'b', 'A above\n{{body}}\nA below');
+    layouts.setLayout('b', 'c', 'B above\n{{body}}\nB below');
+    layouts.setLayout('c', 'd', 'C above\n{{body}}\nC below');
+    layouts.setLayout('d', 'e', 'D above\n{{body}}\nD below');
+    layouts.setLayout('e', 'f', 'E above\n{{body}}\nE below');
+    layouts.setLayout('f', 'last', 'F above\n{{body}}\nF below');
+    layouts.setLayout('last', undefined, 'last!\n{{body}}\nlast!');
 
-    xit('should build a layout stack', function () {
+    it('should build a layout stack', function () {
       var actual = layouts.stack('first');
       var expected = [
         'last!',
@@ -91,6 +91,7 @@ describe('.stack():', function () {
         'F below',
         'last!'
       ].join('\n');
+
       actual.content.should.eql(expected);
     });
   });

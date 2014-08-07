@@ -11,21 +11,13 @@ var util = require('util');
 var isFalsey = require('falsey');
 var Cache = require('config-cache');
 var _ = require('lodash');
-
+var delims = new (require('delims'))();
 
 /**
  * ## Layouts
  *
  * Create a new instance of `Layouts`, optionally passing the default
  * `cache` and `options` to use.
- *
- * The following properties may be passed on the `options`
- *
- *   - `locals`
- *   - `layouts`
- *   - `mergeData`
- *   - `delims`
- *   - `tag`
  *
  * **Example:**
  *
@@ -42,34 +34,19 @@ var _ = require('lodash');
 
 function Layouts(options) {
   Cache.call(this, options);
-  this.options = options || {};
-  this.extend(this.options);
-  this.defaultConfig(this.options);
+  this.options = _.extend({}, options);
+  this.defaultTag = this.makeTag(this.options);
+  this.mergeData = this.options.extend || _.extend;
+  _.extend(this.cache, this.options.cache, this.options.layouts);
+  this.context = _.extend({}, this.options.locals);
+
+  delete this.options.cache;
+  delete this.cache.data;
+
+  this.flattenData(this.cache, 'cache');
 }
 
 util.inherits(Layouts, Cache);
-
-
-/**
- * Initialize default configuration.
- *
- * @api private
- */
-
-Layouts.prototype.defaultConfig = function(options) {
-  var opts = _.extend({}, options);
-  this.locals = {};
-
-  this.set('tag', opts.delims || 'body');
-  this.set('delims', opts.delims || ['{{', '}}']);
-  this.set('defaultTag', this.makeTag(opts));
-
-  this.set('mergeData', opts.extend || _.extend);
-  this.set('layouts', opts.cache || opts.layouts || {});
-  this.set('locals', opts.locals || {});
-  this.set('layout', opts.layout);
-  delete this.cache.cache;
-};
 
 
 /**
@@ -84,9 +61,9 @@ Layouts.prototype.defaultConfig = function(options) {
  */
 
 Layouts.prototype.makeTag = function (options) {
-  var opts = _.extend({}, this.cache, options);
-  opts.delims = opts.delims || this.get('delims');
-  opts.tag = opts.tag || this.get('tag');
+  var opts = _.extend({}, this.options, options);
+  opts.delims = opts.delims || ['{{', '}}'];
+  opts.tag = opts.tag || 'body';
 
   return [
     opts.delims[0],
@@ -108,7 +85,7 @@ Layouts.prototype.makeTag = function (options) {
  */
 
 Layouts.prototype.makeRegex = function (options) {
-  var opts = _.extend({sep: '\\s*'}, this.cache, options);
+  var opts = _.extend({sep: '\\s*'}, this.options, options);
   var tag = this.makeTag(opts).replace(/[\]()[{|}]/g, '\\$&');
   return new RegExp(tag, opts.flags || 'g');
 };
@@ -134,28 +111,17 @@ Layouts.prototype.makeRegex = function (options) {
  */
 
 Layouts.prototype.setLayout = function (name, data, content) {
-  var args = [].slice.call(arguments);
-
-  if (args.length === 1 && typeof name === 'object') {
-    _.forIn(name, function (value, key) {
-      var locals = _.omit(value, ['content', 'layout']);
-      this.flattenData(locals);
-
-      this.extend('layouts.' + key, {
-        content: value.content,
-        layout: value.layout,
-        data: locals
-      });
-    }.bind(this));
+  if (arguments.length === 1 && typeof name === 'object') {
+    _.extend(this.cache, name);
     return this;
   }
 
-  data = data || {};
-  this.extend('layouts.' + name, {
-    layout: data.layout ? data.layout : data,
-    content: data.content ? data.content : content,
+  this.cache[name] = {
+    layout: (data && data.layout) ? data.layout : data,
+    content: (data && data.content) ? data.content : content,
     data: data
-  });
+  };
+
   return this;
 };
 
@@ -178,9 +144,9 @@ Layouts.prototype.setLayout = function (name, data, content) {
 
 Layouts.prototype.getLayout = function (name) {
   if (!name) {
-    return this.cache.layouts;
+    return this.cache;
   }
-  return this.cache.layouts[name];
+  return this.cache[name];
 };
 
 
@@ -205,6 +171,26 @@ Layouts.prototype.assertLayout = function (value) {
 
 
 /**
+ * ## .mergeData
+ *
+ * Extend `data` with the given `obj. A custom function can be
+ * passed on `options.extend` to change how data is merged.
+ *
+ * @param  {*} `value`
+ * @return {String|Null} Returns `true` or `null`.
+ * @api private
+ */
+
+Layouts.prototype._mergeData = function (opts, tmpl) {
+  this.mergeData(this.context, opts, opts.locals, tmpl, tmpl.data);
+  var omit = ['extend', 'content', 'delims', 'layout', 'data', 'locals'];
+  this.context = _.omit(this.context, omit);
+  this.flattenData(this.context);
+  return this;
+};
+
+
+/**
  * ## .createStack
  *
  * Build a layout stack.
@@ -219,7 +205,7 @@ Layouts.prototype.createStack = function (name) {
   var template = Object.create(null);
   var stack = [];
 
-  while (name && (template = this.cache.layouts[name])) {
+  while (name && (template = this.cache[name])) {
     stack.unshift(name);
     name = this.assertLayout(template.layout);
   }
@@ -244,28 +230,58 @@ Layouts.prototype.createStack = function (name) {
  */
 
 Layouts.prototype.stack = function (name, options) {
-  var opts = _.extend({}, options);
-  var stack = this.createStack(name || opts.layout);
+  var stack = this.createStack(name);
+  var opts = _.extend(this.options, options);
+  var data = {};
 
   var tag = this.makeTag(opts) || this.defaultTag;
   this.regex = this.makeRegex(opts);
 
   return _.reduce(stack, function (acc, layout) {
     var content = acc.content || tag;
-    var tmpl = this.cache.layouts[layout];
+    var tmpl = this.cache[layout];
+    this._mergeData(opts, tmpl);
 
-    // If `mergeData` method is passed, use it instead
-    var extend = this.get('mergeData');
-    this.locals = extend({}, this.locals, tmpl.data);
-    delete this.locals.layout;
+    content = content.replace(this.regex, tmpl.content);
+    content = this.renderLayout(content, opts);
 
     return {
-      data: this.locals,
-      content: content.replace(this.regex, tmpl.content),
+      data: this.context,
+      content: content,
       regex: this.regex,
       tag: tag
     };
   }.bind(this), {});
+};
+
+
+/**
+ * ## .renderLayout
+ *
+ * Render an individual layout layer with it's current context.
+ *
+ * **Example:**
+ *
+ * ```js
+ * content = this.renderLayout(content, options);
+ * ```
+ * @param  {String} `content` content for the layout to render
+ * @param  {Object} `options` additional options used for building the render settings
+ * @return {String} rendered content
+ */
+
+Layouts.prototype.renderLayout = function (content, options) {
+  var tag = (this.makeTag(options) || this.defaultTag).replace(/\s/g, '');
+  var body = options.tag || 'body';
+  var settings = delims.templates(options.delims || ['{{','}}']);
+
+  settings.interpolate = settings.evaluate;
+  this.context[body] = tag;
+
+  content = _.template(content, this.context, settings);
+  delete this.context[body];
+
+  return content
 };
 
 
@@ -314,9 +330,9 @@ Layouts.prototype.replaceTag = function (str, content, options) {
 Layouts.prototype.inject = function (str, name, options) {
   var layout = this.stack(name, options);
   if (layout.content) {
-    layout.content = layout.content.replace(this.regex, str);
+    str = layout.content.replace(this.regex, str);
   }
-  return layout;
+  return {data: layout.data, content: str};
 };
 
 

@@ -15,7 +15,7 @@ describe('layouts cache', function () {
   it('should add layouts to the cache when passed to `new Layouts`.', function () {
     var layouts = new Layouts({
       cache: {
-        first: { layout: 'a', content: 'I\'m a <%= title %>' },
+        first: { layout: 'a', content: 'I\'m a {{ title }}' },
         a: { layout: 'b', content: 'A above\n{{body}}\nA below' },
         b: { layout: 'c', content: 'B above\n{{body}}\nB below' },
         c: { layout: 'd', content: 'C above\n{{body}}\nC below' },
@@ -31,7 +31,7 @@ describe('layouts cache', function () {
   it('should add layouts to the cache when using `.setLayout()`.', function () {
     var layouts = new Layouts();
 
-    layouts.setLayout('first', 'a', 'I\'m a <%= title %>');
+    layouts.setLayout('first', 'a', 'I\'m a {{ title }}');
     layouts.setLayout('a', 'b', 'A above\n{{body}}\nA below');
     layouts.setLayout('b', 'c', 'B above\n{{body}}\nB below');
     layouts.setLayout('c', 'd', 'C above\n{{body}}\nC below');

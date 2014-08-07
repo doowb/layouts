@@ -162,11 +162,14 @@ Layouts.prototype.getLayout = function (name) {
  * @api private
  */
 
-Layouts.prototype.assertLayout = function (value) {
-  if (!value || isFalsey(value)) {
+Layouts.prototype.assertLayout = function (value, defaultLayout) {
+  if (value === false || (value && isFalsey(value))) {
     return null;
+  } else if (!value || value === true) {
+    return defaultLayout || null;
+  } else {
+    return value;
   }
-  return value;
 };
 
 
@@ -200,14 +203,15 @@ Layouts.prototype._mergeData = function (opts, tmpl) {
  * @api private
  */
 
-Layouts.prototype.createStack = function (name) {
-  name = this.assertLayout(name);
+Layouts.prototype.createStack = function (name, options) {
+  var opts = _.extend({}, this.options, options);
+  name = this.assertLayout(name, opts.defaultLayout);
   var template = Object.create(null);
   var stack = [];
 
   while (name && (template = this.cache[name])) {
     stack.unshift(name);
-    name = this.assertLayout(template.layout);
+    name = this.assertLayout(template.layout, opts.defaultLayout);
   }
   return stack;
 };
@@ -230,7 +234,7 @@ Layouts.prototype.createStack = function (name) {
  */
 
 Layouts.prototype.stack = function (name, options) {
-  var stack = this.createStack(name);
+  var stack = this.createStack(name, options);
   var opts = _.extend(this.options, options);
   var data = {};
 

@@ -10,8 +10,10 @@
 var util = require('util');
 var isFalsey = require('falsey');
 var Cache = require('config-cache');
+var Delimiters = require('delims');
+var delimiters = new Delimiters();
 var _ = require('lodash');
-var delims = new (require('delims'))();
+
 
 /**
  * ## Layouts
@@ -34,19 +36,63 @@ var delims = new (require('delims'))();
 
 function Layouts(options) {
   Cache.call(this, options);
-  this.options = _.extend({}, options);
-  this.defaultTag = this.makeTag(this.options);
-  this.mergeData = this.options.extend || _.extend;
-  _.extend(this.cache, this.options.cache, this.options.layouts);
-  this.context = _.extend({}, this.options.locals);
-
-  delete this.options.cache;
-  delete this.cache.data;
-
-  this.flattenData(this.cache, 'cache');
+  this.options = options || {};
+  this.init(this.options);
 }
 
 util.inherits(Layouts, Cache);
+
+
+/**
+ * Initialize default configuration.
+ *
+ * @api private
+ */
+
+Layouts.prototype.init = function(opts) {
+  this.extend(opts.cache);
+
+  this.option('locals', {});
+  this.option('mergeData', _.extend);
+  this.option('delims', ['{{', '}}']);
+  this.option('tag', 'body');
+  this.option(opts);
+};
+
+
+/**
+ * ## .option
+ *
+ * Set or get an option.
+ *
+ * ```js
+ * config.option('a', true)
+ * config.option('a')
+ * // => true
+ * ```
+ *
+ * @method option
+ * @param {String} `key`
+ * @param {*} `value`
+ * @return {*}
+ * @api public
+ */
+
+Layouts.prototype.option = function(key, value) {
+  var args = [].slice.call(arguments);
+
+  if (args.length === 1 && typeof key === 'string') {
+    return this.options[key];
+  }
+
+  if (typeof key === 'object' && !Array.isArray(key)) {
+    _.extend.apply(_, [this.options].concat(args));
+    return this;
+  }
+
+  this.options[key] = value;
+  return this;
+};
 
 
 /**
@@ -62,14 +108,35 @@ util.inherits(Layouts, Cache);
 
 Layouts.prototype.makeTag = function (options) {
   var opts = _.extend({}, this.options, options);
-  opts.delims = opts.delims || ['{{', '}}'];
-  opts.tag = opts.tag || 'body';
 
   return [
     opts.delims[0],
     opts.tag,
     opts.delims[1]
   ].join(opts.sep || ' ');
+};
+
+
+/**
+ * ## .makeTag
+ *
+ * Generate the default body tag to use as a fallback, based on the
+ * `tag` and `delims` defined in the options.
+ *
+ * @param  {Object} options
+ * @return {String} The actual body tag, e.g. `{{ body }}`
+ * @api private
+ */
+
+Layouts.prototype.makeDelims = function (options) {
+  var opts = _.extend({}, this.options, options);
+  var delims = opts.delims || ['{{','}}'];
+  var tag = (this.makeTag(opts) || this.defaultTag).replace(/\s/g, '');
+  var body = opts.tag || 'body';
+  var settings = delimiters.templates(opts.delims);
+
+  settings.interpolate = settings.evaluate;
+  locals[body] = tag;
 };
 
 
@@ -121,7 +188,6 @@ Layouts.prototype.setLayout = function (name, data, content) {
     content: (data && data.content) ? data.content : content,
     data: data
   };
-
   return this;
 };
 
@@ -171,26 +237,6 @@ Layouts.prototype.assertLayout = function (value) {
 
 
 /**
- * ## .mergeData
- *
- * Extend `data` with the given `obj. A custom function can be
- * passed on `options.extend` to change how data is merged.
- *
- * @param  {*} `value`
- * @return {String|Null} Returns `true` or `null`.
- * @api private
- */
-
-Layouts.prototype._mergeData = function (opts, tmpl) {
-  this.mergeData(this.context, opts, opts.locals, tmpl, tmpl.data);
-  var omit = ['extend', 'content', 'delims', 'layout', 'data', 'locals'];
-  this.context = _.omit(this.context, omit);
-  this.flattenData(this.context);
-  return this;
-};
-
-
-/**
  * ## .createStack
  *
  * Build a layout stack.
@@ -234,20 +280,21 @@ Layouts.prototype.stack = function (name, options) {
   var opts = _.extend(this.options, options);
   var data = {};
 
+
   var tag = this.makeTag(opts) || this.defaultTag;
   this.regex = this.makeRegex(opts);
 
   return _.reduce(stack, function (acc, layout) {
     var content = acc.content || tag;
     var tmpl = this.cache[layout];
-    this._mergeData(opts, tmpl);
 
+    var ctx = this._context(opts, tmpl);
     content = content.replace(this.regex, tmpl.content);
-    content = this.renderLayout(content, opts);
+    var rendered = this.renderLayout(content, ctx, opts);
 
     return {
-      data: this.context,
-      content: content,
+      data: rendered.data,
+      content: rendered.content,
       regex: this.regex,
       tag: tag
     };
@@ -270,18 +317,24 @@ Layouts.prototype.stack = function (name, options) {
  * @return {String} rendered content
  */
 
-Layouts.prototype.renderLayout = function (content, options) {
-  var tag = (this.makeTag(options) || this.defaultTag).replace(/\s/g, '');
-  var body = options.tag || 'body';
-  var settings = delims.templates(options.delims || ['{{','}}']);
+Layouts.prototype.renderLayout = function (content, locals, options) {
+  var opts = _.extend({}, this.options, options);
+  var ctx = _.extend({}, locals, {layout: locals.layout});
+
+  var tag = (this.makeTag(opts) || this.defaultTag).replace(/\s/g, '');
+  var body = opts.tag || 'body';
+  var settings = delimiters.templates(opts.delims || ['{{','}}']);
 
   settings.interpolate = settings.evaluate;
-  this.context[body] = tag;
+  locals[body] = tag;
 
-  content = _.template(content, this.context, settings);
-  delete this.context[body];
+  content = _.template(content, locals, settings);
+  delete locals[body];
 
-  return content
+  return {
+    content: content,
+    data: locals
+  };
 };
 
 
@@ -333,6 +386,29 @@ Layouts.prototype.inject = function (str, name, options) {
     str = layout.content.replace(this.regex, str);
   }
   return {data: layout.data, content: str};
+};
+
+
+/**
+ * ## ._context
+ *
+ * Extend `data` with the given `obj. A custom function can be
+ * passed on `options.extend` to change how data is merged.
+ *
+ * @param  {*} `value`
+ * @return {String|Null} Returns `true` or `null`.
+ * @api private
+ */
+
+Layouts.prototype._context = function (opts, tmpl) {
+  var locals = this.option('locals');
+  var ctx = {};
+
+  _.extend(ctx, locals, opts, opts.locals, tmpl, tmpl.data);
+  var omit = ['extend', 'content', 'delims', 'layouts', 'data', 'locals'];
+  this.context = _.omit(ctx, omit);
+  this.flattenData(this.context);
+  return this.context;
 };
 
 

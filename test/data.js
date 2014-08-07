@@ -41,6 +41,7 @@ describe('.data()', function () {
       'last!'
     ].join('\n');
     actual.content.should.eql(expected);
+
     actual.data.should.eql({xyz: 'aaa', one: 'two', three: 'four'});
   });
 });

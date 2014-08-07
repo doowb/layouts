@@ -242,9 +242,12 @@ Layouts.prototype.stack = function (name, options) {
     var tmpl = this.cache[layout];
     this._mergeData(opts, tmpl);
 
+    content = content.replace(this.regex, tmpl.content);
+    content = _.template(content, this.context);
+
     return {
       data: this.context,
-      content: content.replace(this.regex, tmpl.content),
+      content: content,
       regex: this.regex,
       tag: tag
     };

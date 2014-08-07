@@ -18,14 +18,14 @@ var page = function (filepath, opts) {
   var obj = matter(str, opts);
   return {
     name: path.basename(filepath, path.extname(filepath)),
-    layout: obj.data && obj.data.layout,
+    data: obj.data,
     content: obj.content.replace(/^\s*/, '')
   };
 };
 
 glob.sync('test/fixtures/*.tmpl').forEach(function(filepath) {
   var obj = page(filepath);
-  layouts.setLayout(obj.name, obj.layout, obj.content);
+  layouts.setLayout(obj.name, obj.data, obj.content);
 });
 
 describe('when nested layouts are defined in front-matter:', function () {
@@ -54,7 +54,7 @@ describe('when nested layouts are defined in front-matter:', function () {
       'C above',
       'B above',
       'A above',
-      'I\'m a <%= title %>', // should not be compiled
+      'I\'m a Foo',
       'A below',
       'B below',
       'C below',

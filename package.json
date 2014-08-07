@@ -1,7 +1,7 @@
 {
   "name": "layouts",
   "description": "Wrap templates with layouts. Layouts can be nested and optionally use other layouts.",
-  "version": "0.2.5",
+  "version": "0.2.7",
   "homepage": "https://github.com/jonschlinkert/layouts",
   "author": {
     "name": "Jon Schlinkert",
@@ -82,6 +82,7 @@
   "dependencies": {
     "config-cache": "^0.1.5",
     "debug": "^1.0.4",
+    "delims": "^0.3.0",
     "falsey": "^0.1.0",
     "lodash": "^2.4.1"
   }

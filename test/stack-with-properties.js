@@ -16,12 +16,12 @@ describe('.stack():', function () {
     var layouts = new Layouts();
 
     layouts.set({first: { layout: 'a', content: '{{body}}' }});
-    layouts.set({a: { layout: 'b', a: 'b', title: 'A', content: '<%= title %> above\n{{body}}\n<%= title %> below' }});
-    layouts.set({b: { layout: 'c', c: 'd', title: 'B', content: '<%= title %> above\n{{body}}\n<%= title %> below' }});
-    layouts.set({c: { layout: 'd', e: 'f', title: 'C', content: '<%= title %> above\n{{body}}\n<%= title %> below' }});
-    layouts.set({d: { layout: 'e', g: 'h', title: 'D', content: '<%= title %> above\n{{body}}\n<%= title %> below' }});
-    layouts.set({e: { layout: 'f', i: 'j', title: 'E', content: '<%= title %> above\n{{body}}\n<%= title %> below' }});
-    layouts.set({f: { layout: 'last', data: {one: 'two'}, title: 'F', content: '<%= title %> above\n{{body}}\n<%= title %> below' }});
+    layouts.set({a: { layout: 'b', a: 'b', title: 'A', content: '{{ title }} above\n{{body}}\n{{ title }} below' }});
+    layouts.set({b: { layout: 'c', c: 'd', title: 'B', content: '{{ title }} above\n{{body}}\n{{ title }} below' }});
+    layouts.set({c: { layout: 'd', e: 'f', title: 'C', content: '{{ title }} above\n{{body}}\n{{ title }} below' }});
+    layouts.set({d: { layout: 'e', g: 'h', title: 'D', content: '{{ title }} above\n{{body}}\n{{ title }} below' }});
+    layouts.set({e: { layout: 'f', i: 'j', title: 'E', content: '{{ title }} above\n{{body}}\n{{ title }} below' }});
+    layouts.set({f: { layout: 'last', data: {one: 'two'}, title: 'F', content: '{{ title }} above\n{{body}}\n{{ title }} below' }});
     layouts.set({last: { layout: undefined, content: 'last!\n{{body}}\nlast!' }});
 
     it('should return a layout stack.', function () {

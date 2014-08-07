@@ -11,7 +11,7 @@ var util = require('util');
 var isFalsey = require('falsey');
 var Cache = require('config-cache');
 var _ = require('lodash');
-
+var delims = new (require('delims'))();
 
 /**
  * ## Layouts
@@ -243,7 +243,7 @@ Layouts.prototype.stack = function (name, options) {
     this._mergeData(opts, tmpl);
 
     content = content.replace(this.regex, tmpl.content);
-    content = _.template(content, this.context);
+    content = this.renderLayout(content, opts);
 
     return {
       data: this.context,
@@ -252,6 +252,36 @@ Layouts.prototype.stack = function (name, options) {
       tag: tag
     };
   }.bind(this), {});
+};
+
+
+/**
+ * ## .renderLayout
+ *
+ * Render an individual layout layer with it's current context.
+ *
+ * **Example:**
+ *
+ * ```js
+ * content = this.renderLayout(content, options);
+ * ```
+ * @param  {String} `content` content for the layout to render
+ * @param  {Object} `options` additional options used for building the render settings
+ * @return {String} rendered content
+ */
+
+Layouts.prototype.renderLayout = function (content, options) {
+  var tag = (this.makeTag(options) || this.defaultTag).replace(/\s/g, '');
+  var body = options.tag || 'body';
+  var settings = delims.templates(options.delims || ['{{','}}']);
+
+  settings.interpolate = settings.evaluate;
+  this.context[body] = tag;
+
+  content = _.template(content, this.context, settings);
+  delete this.context[body];
+
+  return content
 };
 
 

@@ -21,7 +21,7 @@ describe('.setLayout():', function () {
     layouts.setLayout({last: { layout: undefined, content: 'last!\n{{body}}\nlast!' }});
     layouts.setLayout({e: { layout: 'f', content: 'E above\n{{body}}\nE below' }});
     layouts.setLayout({f: { layout: 'last', content: 'F above\n{{body}}\nF below' }});
-    layouts.setLayout({first: { title: 'first', layout: 'a', content: 'I\'m a <%= title %>' }});
+    layouts.setLayout({first: { title: 'first', layout: 'a', content: 'I\'m a {{ title }}' }});
 
     it('should extend the `cache`.', function () {
       var actual = layouts.stack('first');
@@ -85,7 +85,7 @@ describe('.setLayout():', function () {
     describe('when a `layout` propery is defined:', function () {
       var layouts = new Layouts();
 
-      layouts.setLayout('first', {title: 'first', layout: 'a'}, 'I\'m a <%= title %>');
+      layouts.setLayout('first', {title: 'first', layout: 'a'}, 'I\'m a {{ title }}');
       layouts.setLayout('a', {layout: 'b'}, 'A above\n{{body}}\nA below');
       layouts.setLayout('b', {layout: 'c'}, 'B above\n{{body}}\nB below');
       layouts.setLayout('c', {layout: 'd'}, 'C above\n{{body}}\nC below');
@@ -120,7 +120,7 @@ describe('.setLayout():', function () {
     describe('when a `content` propery is defined:', function () {
       var layouts = new Layouts();
 
-      layouts.setLayout('first', {title: 'first', layout: 'a', content: 'I\'m a <%= title %>'});
+      layouts.setLayout('first', {title: 'first', layout: 'a', content: 'I\'m a {{ title }}'});
       layouts.setLayout('a', {layout: 'b', content: 'A above\n{{body}}\nA below'});
       layouts.setLayout('b', {layout: 'c', content: 'B above\n{{body}}\nB below'});
       layouts.setLayout('c', {layout: 'd', content: 'C above\n{{body}}\nC below'});
@@ -163,7 +163,7 @@ describe('.setLayout():', function () {
         last: { layout: undefined, content: 'last!\n{{body}}\nlast!' },
         e: { layout: 'f', content: 'E above\n{{body}}\nE below' },
         f: { layout: 'last', content: 'F above\n{{body}}\nF below' },
-        first: { title: 'first', layout: 'a', content: 'I\'m a <%= title %>' }
+        first: { title: 'first', layout: 'a', content: 'I\'m a {{ title }}' }
       });
 
       it('should extend the `cache` with the layout', function () {

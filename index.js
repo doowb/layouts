@@ -42,7 +42,6 @@ function Layouts(options) {
 
   delete this.options.cache;
   delete this.cache.data;
-
   this.flattenData(this.cache, 'cache');
 }
 
@@ -244,10 +243,13 @@ Layouts.prototype.stack = function (name, options) {
   return _.reduce(stack, function (acc, layout) {
     var content = acc.content || tag;
     var tmpl = this.cache[layout];
+console.log(opts)
+
     this._mergeData(opts, tmpl);
 
+    var data = opts;
     content = content.replace(this.regex, tmpl.content);
-    content = this.renderLayout(content, opts);
+    content = this.renderLayout(content, data, opts);
 
     return {
       data: this.context,
@@ -274,13 +276,14 @@ Layouts.prototype.stack = function (name, options) {
  * @return {String} rendered content
  */
 
-Layouts.prototype.renderLayout = function (content, options) {
+Layouts.prototype.renderLayout = function (content, data, options) {
   var tag = (this.makeTag(options) || this.defaultTag).replace(/\s/g, '');
   var body = options.tag || 'body';
   var settings = delims.templates(options.delims || ['{{','}}']);
 
   settings.interpolate = settings.evaluate;
   this.context[body] = tag;
+  var ctx = _.extend({}, this.context, data);
 
   content = _.template(content, this.context, settings);
   delete this.context[body];

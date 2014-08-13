@@ -118,7 +118,7 @@ Layouts.prototype.makeTag = function (options) {
 
 
 /**
- * ## .makeDelims
+ * ## .makeTag
  *
  * Generate the default body tag to use as a fallback, based on the
  * `tag` and `delims` defined in the options.
@@ -128,16 +128,16 @@ Layouts.prototype.makeTag = function (options) {
  * @api private
  */
 
-// Layouts.prototype.makeDelims = function (options) {
-//   var opts = _.extend({}, this.options, options);
-//   var delims = opts.delims || ['{{','}}'];
-//   var tag = (this.makeTag(opts) || this.defaultTag).replace(/\s/g, '');
-//   var body = opts.tag || 'body';
-//   var settings = delimiters.templates(opts.delims);
-//   locals[body] = tag;
+Layouts.prototype.makeDelims = function (options) {
+  var opts = _.extend({}, this.options, options);
+  var delims = opts.delims || ['{{','}}'];
+  var tag = (this.makeTag(opts) || this.defaultTag).replace(/\s/g, '');
+  var body = opts.tag || 'body';
+  var settings = delimiters.templates(opts.delims);
 
-//   return locals;
-// };
+  settings.interpolate = settings.evaluate;
+  locals[body] = tag;
+};
 
 
 /**
@@ -188,7 +188,6 @@ Layouts.prototype.setLayout = function (name, data, content) {
     content: (data && data.content) ? data.content : content,
     data: data
   };
-
   return this;
 };
 
@@ -229,14 +228,11 @@ Layouts.prototype.getLayout = function (name) {
  * @api private
  */
 
-Layouts.prototype.assertLayout = function (value, defaultLayout) {
-  if (value === false || (value && isFalsey(value))) {
+Layouts.prototype.assertLayout = function (value) {
+  if (!value || isFalsey(value)) {
     return null;
-  } else if (!value || value === true) {
-    return defaultLayout || null;
-  } else {
-    return value;
   }
+  return value;
 };
 
 
@@ -250,15 +246,14 @@ Layouts.prototype.assertLayout = function (value, defaultLayout) {
  * @api private
  */
 
-Layouts.prototype.createStack = function (name, options) {
-  var opts = _.extend({}, this.options, options);
-  name = this.assertLayout(name, opts.defaultLayout);
+Layouts.prototype.createStack = function (name) {
+  name = this.assertLayout(name);
   var template = Object.create(null);
   var stack = [];
 
   while (name && (template = this.cache[name])) {
     stack.unshift(name);
-    name = this.assertLayout(template.layout, opts.defaultLayout);
+    name = this.assertLayout(template.layout);
   }
   return stack;
 };
@@ -281,8 +276,10 @@ Layouts.prototype.createStack = function (name, options) {
  */
 
 Layouts.prototype.stack = function (name, options) {
-  var stack = this.createStack(name, options);
+  var stack = this.createStack(name);
   var opts = _.extend(this.options, options);
+  var data = {};
+
 
   var tag = this.makeTag(opts) || this.defaultTag;
   this.regex = this.makeRegex(opts);
@@ -329,14 +326,14 @@ Layouts.prototype.renderLayout = function (content, locals, options) {
   var settings = delimiters.templates(opts.delims || ['{{','}}']);
 
   settings.interpolate = settings.evaluate;
-  ctx[body] = tag;
+  locals[body] = tag;
 
-  content = _.template(content, ctx, settings);
-  delete ctx[body];
+  content = _.template(content, locals, settings);
+  delete locals[body];
 
   return {
     content: content,
-    data: ctx
+    data: locals
   };
 };
 

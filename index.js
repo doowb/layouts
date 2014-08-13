@@ -111,10 +111,9 @@ Layouts.prototype.makeRegex = function (options) {
 
 Layouts.prototype.setLayout = function (name, data, content) {
   if (arguments.length === 1 && typeof name === 'object') {
-    _.extend(this.cache, name);
+    this.cache = _.extend({}, this.cache, name);
     return this;
   }
-
   this.cache[name] = {
     layout: (data && data.layout) ? data.layout : data,
     content: (data && data.content) ? data.content : content,
@@ -243,8 +242,6 @@ Layouts.prototype.stack = function (name, options) {
   return _.reduce(stack, function (acc, layout) {
     var content = acc.content || tag;
     var tmpl = this.cache[layout];
-console.log(opts)
-
     this._mergeData(opts, tmpl);
 
     var data = opts;

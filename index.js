@@ -279,7 +279,7 @@ console.log(opts)
 Layouts.prototype.renderLayout = function (content, data, options) {
   var tag = (this.makeTag(options) || this.defaultTag).replace(/\s/g, '');
   var body = options.tag || 'body';
-  var settings = delims.templates(options.delims || ['{{','}}']);
+  var settings = _.extend(delims.templates(options.delims || ['{{','}}']), options);
 
   settings.interpolate = settings.evaluate;
   this.context[body] = tag;

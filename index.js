@@ -277,7 +277,7 @@ Layouts.prototype.stack = function (name, options) {
 Layouts.prototype.renderLayout = function (content, options) {
   var tag = (this.makeTag(options) || this.defaultTag).replace(/\s/g, '');
   var body = options.tag || 'body';
-  var settings = delims.templates(options.delims || ['{{','}}']);
+  var settings = _.extend(delims.templates(options.delims || ['{{','}}']), options);
 
   settings.interpolate = settings.evaluate;
   this.context[body] = tag;

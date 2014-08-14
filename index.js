@@ -209,8 +209,10 @@ Layouts.prototype.createStack = function (name, options) {
   var template = Object.create(null);
   var stack = [];
 
-  while (name && (template = this.cache[name])) {
+  var prev = null;
+  while (name && (prev !== name) && (template = this.cache[name])) {
     stack.unshift(name);
+    prev = name;
     name = this.assertLayout(template.layout, opts.defaultLayout);
   }
   return stack;

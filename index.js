@@ -213,7 +213,8 @@ Layouts.prototype.createStack = function (name, options) {
   while (name && (prev !== name) && (template = this.cache[name])) {
     stack.unshift(name);
     prev = name;
-    name = this.assertLayout(template.layout, opts.defaultLayout);
+    var layout = template.layout || (template.data && template.data.layout);
+    name = this.assertLayout(layout, opts.defaultLayout);
   }
   return stack;
 };

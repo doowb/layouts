@@ -32,18 +32,40 @@ var delims = new (require('delims'))();
 
 function Layouts(options) {
   Cache.call(this, options);
-  this.options = _.extend({}, options);
-  this.defaultTag = this.makeTag(this.options);
-  this._extendMethod = this.options.extend || _.extend;
-  _.extend(this.cache, this.options.cache, this.options.layouts);
-  this.context = _.extend({}, this.options.locals);
-
-  delete this.options.cache;
-  delete this.cache.data;
-  this.flattenData(this.cache, 'cache');
+  this.init(options);
 }
 
 util.inherits(Layouts, Cache);
+
+
+/**
+ * Initialize defaults.
+ *
+ * @api private
+ */
+
+Layouts.prototype.init = function (options) {
+  this.options = _.extend({}, options);
+  this._extendMethod = this.options.extend || _.extend;
+
+  // Create the default `{{ body }}` tag
+  this.defaultTag = this.makeTag(this.options);
+
+  var o = {};
+  _.extend(o, this.options.cache);
+  _.extend(o, this.options.layouts);
+  _.extend(o, this.cache.data);
+
+  // Clean up properties from user options.
+  delete this.options.cache;
+  delete this.cache.data;
+  this.extend(o);
+
+  // Init the context using any locals pass on `options`
+  this.context = _.extend({}, this.options.locals);
+  // flatten nested `cache` objects
+  this.flattenData(this.cache, 'cache');
+};
 
 
 /**
@@ -118,9 +140,11 @@ Layouts.prototype.setLayout = function (name, data, content) {
 
 /**
  * Define the default layout variable and delimiters to be used.
+ *
+ * @api private
  */
 
-Layouts.prototype._defaultLayout = function (str, context, options) {
+Layouts.prototype._defaultLayout = function (context, options) {
   var opts = _.extend({}, options);
   var tag = (this.makeTag(options) || this.defaultTag).replace(/\s/g, '');
 
@@ -310,7 +334,7 @@ Layouts.prototype.stack = function (name, options) {
  */
 
 Layouts.prototype.renderLayout = function (str, context, options) {
-  var layout = this._defaultLayout(str, context, options);
+  var layout = this._defaultLayout(context, options);
 
   var ctx = _.extend({}, context, this.context, {
     body: layout.variable

@@ -36,7 +36,7 @@ function Layouts(options) {
   Cache.call(this, options);
   this.options = _.extend({}, options);
   this.defaultTag = this.makeTag(this.options);
-  this.mergeData = this.options.extend || _.extend;
+  this._extendMethod = this.options.extend || _.extend;
   _.extend(this.cache, this.options.cache, this.options.layouts);
   this.context = _.extend({}, this.options.locals);
 
@@ -172,21 +172,34 @@ Layouts.prototype.assertLayout = function (value, defaultLayout) {
 
 
 /**
- * ## .mergeData
+ * ## ._mergeData
  *
- * Extend `data` with the given `obj. A custom function can be
+ * Extend `data` with the given `obj. A custom `_extendMethod` can be
  * passed on `options.extend` to change how data is merged.
  *
- * @param  {*} `value`
- * @return {String|Null} Returns `true` or `null`.
+ * @param  {Object} `opts` Pass an options object with `data` or `locals`
+ * @return {Object} `file` A `file` to with `data` to be merged.
  * @api private
  */
 
-Layouts.prototype._mergeData = function (opts, tmpl) {
-  this.mergeData(this.context, opts, opts.locals, tmpl, tmpl.data);
-  var omit = ['extend', 'content', 'delims', 'layout', 'data', 'locals'];
-  this.context = _.omit(this.context, omit);
-  this.flattenData(this.context);
+Layouts.prototype._mergeData = function (opts, file) {
+  var data = {};
+
+  // build up the `data` object
+  _.extend(data, opts, opts.locals, opts.data);
+  _.extend(data, file, file.data);
+
+  // Flatten nested `data` objects
+  this.flattenData(data);
+
+  // Extend the context
+  this._extendMethod(this.context, _.omit(data, [
+    'extend',
+    'content',
+    'delims',
+    'layout'
+  ]));
+
   return this;
 };
 
@@ -237,7 +250,6 @@ Layouts.prototype.createStack = function (name, options) {
 Layouts.prototype.stack = function (name, options) {
   var stack = this.createStack(name, options);
   var opts = _.extend(this.options, options);
-  var data = {};
 
   var tag = this.makeTag(opts) || this.defaultTag;
   this.regex = this.makeRegex(opts);
@@ -280,7 +292,6 @@ Layouts.prototype.renderLayout = function (content, data, options) {
   var tag = (this.makeTag(options) || this.defaultTag).replace(/\s/g, '');
   var body = options.tag || 'body';
   var settings = _.extend(delims.templates(options.delims || ['{{','}}']), options);
-
   settings.interpolate = settings.evaluate;
   this.context[body] = tag;
   var ctx = _.extend({}, this.context, data);
@@ -336,6 +347,7 @@ Layouts.prototype.replaceTag = function (str, content, options) {
 
 Layouts.prototype.inject = function (str, name, options) {
   var layout = this.stack(name, options);
+
   if (layout.content) {
     str = layout.content.replace(this.regex, str);
   }

@@ -16,10 +16,14 @@ var layouts = require('layouts');
 ```
 
 ## API
-### Layouts
+[## Layouts](index.js#L33)
 
-Create a new instance of `Layouts`, optionally passing the default
-`cache` and `options` to use.
+Create a new instance of `Layouts`, optionally passing the default `cache` and `options` to use.
+
+* `cache` **{Object}**: A template cache. See [Layouts#set](#set) for object details.  
+* `options` **{Object}**: Options to use.  
+* `options.delims` **{Array}**: Template delimiters to use formatted as an array (`['{{', '}}']`)  
+* `options.tag` **{String}**: The tag name to use. Default is `body` (e.g. `{{ body }}`)  
 
 **Example:**
 
@@ -28,63 +32,94 @@ var Layouts = require('layouts');
 var layouts = new Layouts();
 ```
 
-* `cache` {Object}: A template cache. See [Layouts#set](#set) for object details. 
-* `options` {Object}: Options to use. 
-* `options.delims` {Array}: Template delimiters to use formatted as an array (`['{{', '}}']`) 
-* `options.tag` {String}: The tag name to use. Default is `body` (e.g. `{{ body }}`)   
 
+ [## setLayout](index.js#L104)
 
-### .set
+Store a template on the cache by its `name`, the `layout` to use, and the template's `content.
 
-Store a template on the cache by its `name`, the `layout` to use,
-and the template's `content.
+* `name` **{String|Object}**: If `name` is a string, `layout` and `content` are required.  
+* `data` **{String|Object}**: Pass a string defining the name of layout to use for the given template, or pass an object with a `layout` property.  
+* `content` **{String}**: The template "content", this will not be compiled or rendered.  
 
 **Example:**
 
 ```js
-layouts.set('a', 'b', '<h1>Foo</h1>\n{{body}}\n');
+layouts.setLayout('a', 'b', '<h1>Foo</h1>\n{{body}}\n');
 ```
 
-* `name` {String|Object}: If `name` is a string, `layout` and `content` are required. 
-* `data` {String|Object}: Pass a string defining the name of layout to use for the given template, or pass an object with a `layout` property. 
-* `content` {String}: The template "content", this will not be compiled or rendered.   
+
+ [## _defaultLayout](index.js#L123)
 
 
-### .get
+Define the default layout variable and delimiters to be used.
+
+
+ [## getLayout](index.js#L154)
 
 Get a cached template by `name`.
 
+* `name` **{String}**  
+* returns **{Object}**: The template object to return.  
+
 **Example:**
 
 ```js
-layouts.get('a');
+layouts.getLayout('a');
 //=> { layout: 'b', content: '<h1>Foo</h1>\n{{body}}\n' }
 ```
 
-* `name` {String}  
-* `return` {Object} The template object to return. 
 
+ [## renderLayout](index.js#L312)
 
-### .replaceTag
+Render a layout using Lo-Dash, by passing content (`str`), `context` and `options`.
 
-Replace a `{{body}}` tag (or equivalent if custom delims are used) in `content`
-with the given `str`.
+* `str` **{String}**: Content for the layout to render.  
+* `options` **{Object}**: Additional options used for building the render settings.  
+* returns **{String}**: Rendered string.  
 
 **Example:**
 
 ```js
-console.log(layouts.replaceTag('ABC', 'Before {{body}} After'));
+layouts.renderLayout(str, context, options);
+```
+
+Since this method uses Lo-Dash to process templates custom delimiters
+may be passed on the `options.delims` property. This allows layouts to
+be rendered prior to injecting "pages" or other str with templates that
+_should not_ be rendered when the layout stack is processed.
+
+**Example:**
+
+```js
+layouts.renderLayout(str, context, {
+  delims: ['<%','%>']
+});
+```
+
+
+ [## replaceTag](index.js#L342)
+
+Replace a `{{body}}` tag with the given `str`. Custom delimiters and/or variable may be passed on the `options`. Unlike `renderLayout`, this method does not render templates, it only peforms a basic regex replacement.
+
+* `str` **{String}**: The string to use as a replacement value.  
+* `content` **{String}**: A string with a `{{body}}` tag where the `str` should be injected.  
+* returns **{String}**: Resulting flattened content.  
+
+**Example:**
+
+```js
+layouts.replaceTag('ABC', 'Before {{body}} After');
 //=> 'Before ABC After'
 ```
 
-* `str` {String}: The string to use as a replacement value. 
-* `content` {String}: A string with a `{{body}}` tag where the `str` should be injected.  
-* `return` {String} Resulting flattened content. 
 
+ [## inject](index.js#L365)
 
-### .inject
+Return an object with the string (`str`) and `data` required to build a final layout. This is useful if you need to use your own template engine to handle this final step.
 
-Inject content into a layout stack.
+* `str` **{String}**: The string to be injected into the layout. Usually a page, or inner layout, etc.  
+* `name` **{String}**: The name of the first layout to use to build the stack.  
+* returns **{Object}**: Resulting flattened layout.  
 
 **Example:**
 
@@ -92,10 +127,6 @@ Inject content into a layout stack.
 var page = layouts.inject(str, 'base');
 var tmpl = _.template(page, context);
 ```
-
-* `str` {String}: The content to inject into the layout. 
-* `name` {String}: The layout to start with.  
-* `return` {String} Resulting flattened layout.
 
 ## Author
 
@@ -110,4 +141,4 @@ Released under the MIT license
 
 ***
 
-_This file was generated by [verb-cli](https://github.com/assemble/verb-cli) on August 01, 2014._
+_This file was generated by [verb-cli](https://github.com/assemble/verb-cli) on August 17, 2014._

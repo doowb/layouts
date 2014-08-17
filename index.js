@@ -14,8 +14,6 @@ var _ = require('lodash');
 var delims = new (require('delims'))();
 
 /**
- * ## Layouts
- *
  * Create a new instance of `Layouts`, optionally passing the default
  * `cache` and `options` to use.
  *
@@ -49,8 +47,6 @@ util.inherits(Layouts, Cache);
 
 
 /**
- * ## .makeTag
- *
  * Generate the default body tag to use as a fallback, based on the
  * `tag` and `delims` defined in the options.
  *
@@ -73,8 +69,6 @@ Layouts.prototype.makeTag = function (options) {
 
 
 /**
- * ## .makeRegex
- *
  * Return a regular expression for the "body" tag based on the
  * `tag` and `delims` defined in the options.
  *
@@ -91,8 +85,6 @@ Layouts.prototype.makeRegex = function (options) {
 
 
 /**
- * ## .setLayout
- *
  * Store a template on the cache by its `name`, the `layout` to use,
  * and the template's `content.
  *
@@ -125,8 +117,27 @@ Layouts.prototype.setLayout = function (name, data, content) {
 
 
 /**
- * ## .getLayout
- *
+ * Define the default layout variable and delimiters to be used.
+ */
+
+Layouts.prototype._defaultLayout = function (str, context, options) {
+  var opts = _.extend({}, options);
+  var tag = (this.makeTag(options) || this.defaultTag).replace(/\s/g, '');
+
+  var variable = options.tag || 'body';
+  var settings = _.extend(delims.templates(options.delims || ['{{','}}']), options);
+
+  settings.interpolate = settings.evaluate;
+
+  return {
+    variable: tag,
+    context: opts,
+    settings: settings
+  };
+};
+
+
+/**
  * Get a cached template by `name`.
  *
  * **Example:**
@@ -149,8 +160,6 @@ Layouts.prototype.getLayout = function (name) {
 
 
 /**
- * ## .assertLayout
- *
  * Assert whether or not a layout should be used based on
  * the given `value`. If a layout should be used, the name of the
  * layout is returned, if not `null` is returned.
@@ -172,8 +181,6 @@ Layouts.prototype.assertLayout = function (value, defaultLayout) {
 
 
 /**
- * ## ._mergeData
- *
  * Extend `data` with the given `obj. A custom `_extendMethod` can be
  * passed on `options.extend` to change how data is merged.
  *
@@ -205,45 +212,47 @@ Layouts.prototype._mergeData = function (opts, file) {
 
 
 /**
- * ## .createStack
- *
  * Build a layout stack.
  *
  * @param  {String} `name` The name of the layout to add to the stack.
- * @return {String}
+ * @param  {Object} `options` Options to pass to `assertLayout`.
+ * @return {Array}
  * @api private
  */
 
 Layouts.prototype.createStack = function (name, options) {
   var opts = _.extend({}, this.options, options);
   name = this.assertLayout(name, opts.defaultLayout);
-  var template = Object.create(null);
-  var stack = [];
 
+  var template = {};
+  var stack = [];
   var prev = null;
+
   while (name && (prev !== name) && (template = this.cache[name])) {
     stack.unshift(name);
     prev = name;
     var layout = template.layout || (template.data && template.data.layout);
     name = this.assertLayout(layout, opts.defaultLayout);
   }
+
   return stack;
 };
 
 
 /**
- * ## .stack
- *
- * Flatten nested layouts.
+ * Reduce a layout stack for a template into a single flattened
+ * layout. Pass the `name` of the layout defined for the template
+ * (e.g. the first layout in the stack).
  *
  * **Example:**
  *
  * ```js
- * var layout = layouts.stack('base');
+ * layouts.stack('base');
  * ```
  *
  * @param  {String} `name` The layout to start with.
- * @return {String} Resulting flattened layout.
+ * @param  {Object} `options`
+ * @return {Array} The file's layout stack is returned as an array.
  * @api private
  */
 
@@ -257,9 +266,8 @@ Layouts.prototype.stack = function (name, options) {
   return _.reduce(stack, function (acc, layout) {
     var content = acc.content || tag;
     var tmpl = this.cache[layout];
-    this._mergeData(opts, tmpl);
 
-    var data = opts;
+    var data = this._mergeData(opts, tmpl);
     content = content.replace(this.regex, tmpl.content);
     content = this.renderLayout(content, data, opts);
 
@@ -274,45 +282,54 @@ Layouts.prototype.stack = function (name, options) {
 
 
 /**
- * ## .renderLayout
- *
- * Render an individual layout layer with it's current context.
+ * Render a layout using Lo-Dash, by passing content (`str`), `context`
+ * and `options`.
  *
  * **Example:**
  *
  * ```js
- * content = this.renderLayout(content, options);
+ * layouts.renderLayout(str, context, options);
  * ```
- * @param  {String} `content` content for the layout to render
- * @param  {Object} `options` additional options used for building the render settings
- * @return {String} rendered content
+ *
+ * Since this method uses Lo-Dash to process templates custom delimiters
+ * may be passed on the `options.delims` property. This allows layouts to
+ * be rendered prior to injecting "pages" or other str with templates that
+ * _should not_ be rendered when the layout stack is processed.
+ *
+ * **Example:**
+ *
+ * ```js
+ * layouts.renderLayout(str, context, {
+ *   delims: ['<%','%>']
+ * });
+ * ```
+ *
+ * @param  {String} `str` Content for the layout to render.
+ * @param  {Object} `options` Additional options used for building the render settings.
+ * @return {String} Rendered string.
  */
 
-Layouts.prototype.renderLayout = function (content, data, options) {
-  var tag = (this.makeTag(options) || this.defaultTag).replace(/\s/g, '');
-  var body = options.tag || 'body';
-  var settings = _.extend(delims.templates(options.delims || ['{{','}}']), options);
-  settings.interpolate = settings.evaluate;
-  this.context[body] = tag;
-  var ctx = _.extend({}, this.context, data);
+Layouts.prototype.renderLayout = function (str, context, options) {
+  var layout = this._defaultLayout(str, context, options);
 
-  content = _.template(content, this.context, settings);
-  delete this.context[body];
+  var ctx = _.extend({}, context, this.context, {
+    body: layout.variable
+  });
 
-  return content
+  return _.template(str, ctx, layout.settings);
 };
 
 
 /**
- * ## .replaceTag
- *
- * Replace a `{{body}}` tag (or equivalent if custom delims are used) in `content`
- * with the given `str`.
+ * Replace a `{{body}}` tag with the given `str`. Custom delimiters
+ * and/or variable may be passed on the `options`. Unlike `renderLayout`,
+ * this method does not render templates, it only peforms a basic regex
+ * replacement.
  *
  * **Example:**
  *
  * ```js
- * console.log(layouts.replaceTag('ABC', 'Before {{body}} After'));
+ * layouts.replaceTag('ABC', 'Before {{body}} After');
  * //=> 'Before ABC After'
  * ```
  *
@@ -328,9 +345,9 @@ Layouts.prototype.replaceTag = function (str, content, options) {
 
 
 /**
- * ## .inject
- *
- * Inject content into a layout stack.
+ * Return an object with the string (`str`) and `data` required
+ * to build a final layout. This is useful if you need to use
+ * your own template engine to handle this final step.
  *
  * **Example:**
  *
@@ -339,9 +356,9 @@ Layouts.prototype.replaceTag = function (str, content, options) {
  * var tmpl = _.template(page, context);
  * ```
  *
- * @param  {String} `str` The content to inject into the layout.
- * @param  {String} `name` The layout to start with.
- * @return {String} Resulting flattened layout.
+ * @param  {String} `str` The string to be injected into the layout. Usually a page, or inner layout, etc.
+ * @param  {String} `name` The name of the first layout to use to build the stack.
+ * @return {Object} Resulting flattened layout.
  * @api public
  */
 

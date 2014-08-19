@@ -11,7 +11,7 @@ var should = require('should');
 var Layouts = require('..');
 
 
-describe('.inject():', function () {
+describe('.process():', function () {
   describe('when layouts are defined as objects:', function () {
     var layouts = new Layouts();
 
@@ -24,8 +24,8 @@ describe('.inject():', function () {
     layouts.setLayout({f: { layout: 'last', content: 'F above\n{{body}}\nF below' }});
     layouts.setLayout({first: { layout: 'a', content: '{{body}}' }});
 
-    it('should inject content into a layout.', function () {
-      var stack = layouts.inject('fooo', 'first');
+    it('should process content into a layout.', function () {
+      var stack = layouts.process('fooo', 'first');
       var expected = [
         'last!',
         'F above',
@@ -60,7 +60,7 @@ describe('.inject():', function () {
     layouts.setLayout('last', undefined, 'last!\n{{body}}\nlast!');
 
     it('should extend the `cache`.', function () {
-      var actual = layouts.inject('Last! {{body}}', 'first');
+      var actual = layouts.process('Last! {{body}}', 'first');
       var expected = [
         'E above',
         'D above',

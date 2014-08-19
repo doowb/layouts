@@ -376,7 +376,7 @@ Layouts.prototype.replaceTag = function (str, content, options) {
  * **Example:**
  *
  * ```js
- * var page = layouts.inject(str, 'base');
+ * var page = layouts.process(str, 'base');
  * var tmpl = _.template(page, context);
  * ```
  *
@@ -386,7 +386,7 @@ Layouts.prototype.replaceTag = function (str, content, options) {
  * @api public
  */
 
-Layouts.prototype.inject = function (str, name, options) {
+Layouts.prototype.process = function (str, name, options) {
   var layout = this.stack(name, options);
 
   if (layout.content) {

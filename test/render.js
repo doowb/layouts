@@ -11,7 +11,7 @@ var should = require('should');
 var Layouts = require('..');
 
 
-describe('.process():', function () {
+describe('.render():', function () {
   describe('when layouts are defined as objects:', function () {
     var layouts = new Layouts();
 
@@ -24,8 +24,8 @@ describe('.process():', function () {
     layouts.setLayout({f: { layout: 'last', content: 'F above\n{{body}}\nF below' }});
     layouts.setLayout({first: { layout: 'a', content: '{{body}}' }});
 
-    it('should process content into a layout.', function () {
-      var stack = layouts.process('fooo', 'first');
+    it('should render content into a layout.', function () {
+      var stack = layouts.render('fooo', 'first');
       var expected = [
         'last!',
         'F above',
@@ -34,7 +34,7 @@ describe('.process():', function () {
         'C above',
         'B above',
         'A above',
-        '{{body}}', // last {{body}} tag should be unprocessed
+        '{{body}}', // last {{body}} tag should be unrendered
         'A below',
         'B below',
         'C below',
@@ -60,14 +60,14 @@ describe('.process():', function () {
     layouts.setLayout('last', undefined, 'last!\n{{body}}\nlast!');
 
     it('should extend the `cache`.', function () {
-      var actual = layouts.process('Last! {{body}}', 'first');
+      var actual = layouts.render('Last! {{body}}', 'first');
       var expected = [
         'E above',
         'D above',
         'C above',
         'B above',
         'A above',
-        'Last! {{body}}', // last {{body}} tag should be unprocessed
+        'Last! {{body}}', // last {{body}} tag should be unrendered
         'A below',
         'B below',
         'C below',

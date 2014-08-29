@@ -10,8 +10,10 @@
 var util = require('util');
 var isFalsey = require('falsey');
 var Cache = require('config-cache');
+var Delims = require('delims');
+var delims = new Delims();
 var _ = require('lodash');
-var delims = new (require('delims'))();
+
 
 /**
  * Create a new instance of `Layouts`, optionally passing the default
@@ -128,36 +130,13 @@ Layouts.prototype.setLayout = function (name, data, content) {
     this.cache = _.extend({}, this.cache, name);
     return this;
   }
+
   this.cache[name] = {
     layout: (data && data.layout) ? data.layout : data,
     content: (data && data.content) ? data.content : content,
     data: data
   };
-
   return this;
-};
-
-
-/**
- * Define the default layout variable and delimiters to be used.
- *
- * @api private
- */
-
-Layouts.prototype._defaultLayout = function (context, options) {
-  var opts = _.extend({}, options);
-  var tag = (this.makeTag(options) || this.defaultTag).replace(/\s/g, '');
-
-  var variable = options.tag || 'body';
-  var settings = _.extend(delims.templates(options.delims || ['{{','}}']), options);
-
-  settings.interpolate = settings.evaluate;
-
-  return {
-    variable: tag,
-    context: opts,
-    settings: settings
-  };
 };
 
 
@@ -173,6 +152,7 @@ Layouts.prototype._defaultLayout = function (context, options) {
  *
  * @param  {String} `name`
  * @return {Object} The template object to return.
+ * @api public
  */
 
 Layouts.prototype.getLayout = function (name) {
@@ -180,6 +160,27 @@ Layouts.prototype.getLayout = function (name) {
     return this.cache;
   }
   return this.cache[name];
+};
+
+
+/**
+ * Define the default layout variable and delimiters to be used.
+ *
+ * @api private
+ */
+
+Layouts.prototype._defaultLayout = function (context, options) {
+  var opts = _.extend({}, options);
+  var tag = (this.makeTag(options) || this.defaultTag).replace(/\s/g, '');
+  var settings = _.extend(delims.templates(options.delims || ['{{','}}']), options);
+
+  settings.interpolate = settings.evaluate;
+
+  return {
+    variable: tag,
+    context: opts,
+    settings: settings
+  };
 };
 
 
@@ -201,37 +202,6 @@ Layouts.prototype.assertLayout = function (value, defaultLayout) {
   } else {
     return value;
   }
-};
-
-
-/**
- * Extend `data` with the given `obj. A custom `_extendMethod` can be
- * passed on `options.extend` to change how data is merged.
- *
- * @param  {Object} `opts` Pass an options object with `data` or `locals`
- * @return {Object} `file` A `file` to with `data` to be merged.
- * @api private
- */
-
-Layouts.prototype._mergeData = function (opts, file) {
-  var data = {};
-
-  // build up the `data` object
-  _.extend(data, opts, opts.locals, opts.data);
-  _.extend(data, file, file.data);
-
-  // Flatten nested `data` objects
-  this.flattenData(data);
-
-  // Extend the context
-  this._extendMethod(this.context, _.omit(data, [
-    'extend',
-    'content',
-    'delims',
-    'layout'
-  ]));
-
-  return this;
 };
 
 
@@ -277,7 +247,7 @@ Layouts.prototype.createStack = function (name, options) {
  * @param  {String} `name` The layout to start with.
  * @param  {Object} `options`
  * @return {Array} The file's layout stack is returned as an array.
- * @api private
+ * @api public
  */
 
 Layouts.prototype.stack = function (name, options) {
@@ -331,6 +301,7 @@ Layouts.prototype.stack = function (name, options) {
  * @param  {String} `str` Content for the layout to render.
  * @param  {Object} `options` Additional options used for building the render settings.
  * @return {String} Rendered string.
+ * @api public
  */
 
 Layouts.prototype.renderLayout = function (str, context, options) {
@@ -395,5 +366,40 @@ Layouts.prototype.render = function (str, name, options) {
   return {data: layout.data, content: str};
 };
 
+
+/**
+ * Extend `data` with the given `obj. A custom `_extendMethod` can be
+ * passed on `options.extend` to change how data is merged.
+ *
+ * @param  {Object} `opts` Pass an options object with `data` or `locals`
+ * @return {Object} `file` A `file` to with `data` to be merged.
+ * @api private
+ */
+
+Layouts.prototype._mergeData = function (opts, file) {
+  var data = {};
+
+  // build up the `data` object
+  _.extend(data, opts, opts.locals, opts.data);
+  _.extend(data, file, file.data);
+
+  // Flatten nested `data` objects
+  this.flattenData(data);
+
+  // Extend the context
+  this._extendMethod(this.context, _.omit(data, [
+    'extend',
+    'content',
+    'delims',
+    'layout'
+  ]));
+
+  return this;
+};
+
+
+/**
+ * Expose `Layouts`
+ */
 
 module.exports = Layouts;

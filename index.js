@@ -13,6 +13,7 @@ var Cache = require('config-cache');
 var Delims = require('delims');
 var delims = new Delims();
 var _ = require('lodash');
+var extend = _.extend;
 
 
 /**
@@ -28,13 +29,13 @@ var _ = require('lodash');
  *
  * @param {Object} `cache` A template cache. See [Layouts#set](#set) for object details.
  * @param {Object} `options` Options to use.
- * @param {Array} `options.delims` Template delimiters to use formatted as an array (`['{{', '}}']`)
- * @param {String} `options.tag` The tag name to use. Default is `body` (e.g. `{{ body }}`)
+ * @param {Array} `options.delims` Template delimiters to use formatted as an array (`['{%=, '%}']`)
+ * @param {String} `options.tag` The tag name to use. Default is `body` (e.g. `{%= body %}`)
  */
 
 function Layouts(options) {
   Cache.call(this, options);
-  this.init(options);
+  this.initLayouts(options);
 }
 
 util.inherits(Layouts, Cache);
@@ -46,17 +47,17 @@ util.inherits(Layouts, Cache);
  * @api private
  */
 
-Layouts.prototype.init = function (options) {
-  this.options = _.extend({}, options);
-  this._extendMethod = this.options.extend || _.extend;
+Layouts.prototype.initLayouts = function (options) {
+  this.options = extend({}, options);
+  this._mergeFn = this.options.mergeFn || _.merge;
 
-  // Create the default `{{ body }}` tag
+  // Create the default `{%= body %}` tag
   this.defaultTag = this.makeTag(this.options);
 
   var o = {};
-  _.extend(o, this.options.cache);
-  _.extend(o, this.options.layouts);
-  _.extend(o, this.cache.data);
+  extend(o, this.options.cache);
+  extend(o, this.options.layouts);
+  extend(o, this.cache.data);
 
   // Clean up properties from user options.
   delete this.options.cache;
@@ -64,7 +65,7 @@ Layouts.prototype.init = function (options) {
   this.extend(o);
 
   // Init the context using any locals pass on `options`
-  this.context = _.extend({}, this.options.locals);
+  this.context = extend({}, this.options.locals);
   // flatten nested `cache` objects
   this.flattenData(this.cache, 'cache');
 };
@@ -75,13 +76,13 @@ Layouts.prototype.init = function (options) {
  * `tag` and `delims` defined in the options.
  *
  * @param  {Object} options
- * @return {String} The actual body tag, e.g. `{{ body }}`
+ * @return {String} The actual body tag, e.g. `{%= body %}`
  * @api private
  */
 
 Layouts.prototype.makeTag = function (options) {
-  var opts = _.extend({}, this.options, options);
-  opts.delims = opts.delims || ['{{', '}}'];
+  var opts = extend({}, this.options, options);
+  opts.delims = opts.delims || ['{%=', '%}'];
   opts.tag = opts.tag || 'body';
 
   return [
@@ -102,7 +103,7 @@ Layouts.prototype.makeTag = function (options) {
  */
 
 Layouts.prototype.makeRegex = function (options) {
-  var opts = _.extend({sep: '\\s*'}, this.options, options);
+  var opts = extend({sep: '\\s*'}, this.options, options);
   var tag = this.makeTag(opts).replace(/[\]()[{|}]/g, '\\$&');
   return new RegExp(tag, opts.flags || 'g');
 };
@@ -115,7 +116,7 @@ Layouts.prototype.makeRegex = function (options) {
  * **Example:**
  *
  * ```js
- * layouts.setLayout('a', 'b', '<h1>Foo</h1>\n{{body}}\n');
+ * layouts.setLayout('a', 'b', '<h1>Foo</h1>\n{%= body %}\n');
  * ```
  *
  * @param {String|Object} `name` If `name` is a string, `layout` and `content` are required.
@@ -127,7 +128,7 @@ Layouts.prototype.makeRegex = function (options) {
 
 Layouts.prototype.setLayout = function (name, data, content) {
   if (arguments.length === 1 && typeof name === 'object') {
-    this.cache = _.extend({}, this.cache, name);
+    this.cache = extend({}, this.cache, name);
     return this;
   }
 
@@ -136,6 +137,7 @@ Layouts.prototype.setLayout = function (name, data, content) {
     content: (data && data.content) ? data.content : content,
     data: data
   };
+
   return this;
 };
 
@@ -147,7 +149,7 @@ Layouts.prototype.setLayout = function (name, data, content) {
  *
  * ```js
  * layouts.getLayout('a');
- * //=> { layout: 'b', content: '<h1>Foo</h1>\n{{body}}\n' }
+ * //=> { layout: 'b', content: '<h1>Foo</h1>\n{%= body %}\n' }
  * ```
  *
  * @param  {String} `name`
@@ -170,9 +172,9 @@ Layouts.prototype.getLayout = function (name) {
  */
 
 Layouts.prototype._defaultLayout = function (context, options) {
-  var opts = _.extend({}, options);
-  var tag = (this.makeTag(options) || this.defaultTag).replace(/\s/g, '');
-  var settings = _.extend(delims.templates(options.delims || ['{{','}}']), options);
+  var opts = extend({}, options);
+  var tag = (this.makeTag(options) || this.defaultTag);
+  var settings = extend(delims.templates(options.delims || ['{%=','%}']), options);
 
   settings.interpolate = settings.evaluate;
 
@@ -215,7 +217,7 @@ Layouts.prototype.assertLayout = function (value, defaultLayout) {
  */
 
 Layouts.prototype.createStack = function (name, options) {
-  var opts = _.extend({}, this.options, options);
+  var opts = extend({}, this.options, options);
   name = this.assertLayout(name, opts.defaultLayout);
 
   var template = {};
@@ -252,7 +254,7 @@ Layouts.prototype.createStack = function (name, options) {
 
 Layouts.prototype.stack = function (name, options) {
   var stack = this.createStack(name, options);
-  var opts = _.extend(this.options, options);
+  var opts = extend(this.options, options);
 
   var tag = this.makeTag(opts) || this.defaultTag;
   this.regex = this.makeRegex(opts);
@@ -307,7 +309,7 @@ Layouts.prototype.stack = function (name, options) {
 Layouts.prototype.renderLayout = function (str, context, options) {
   var layout = this._defaultLayout(context, options);
 
-  var ctx = _.extend({}, context, this.context, {
+  var ctx = extend({}, context, this.context, {
     body: layout.variable
   });
 
@@ -316,7 +318,7 @@ Layouts.prototype.renderLayout = function (str, context, options) {
 
 
 /**
- * Replace a `{{body}}` tag with the given `str`. Custom delimiters
+ * Replace a `{%= body %}` tag with the given `str`. Custom delimiters
  * and/or variable may be passed on the `options`. Unlike `renderLayout`,
  * this method does not render templates, it only peforms a basic regex
  * replacement.
@@ -324,12 +326,12 @@ Layouts.prototype.renderLayout = function (str, context, options) {
  * **Example:**
  *
  * ```js
- * layouts.replaceTag('ABC', 'Before {{body}} After');
+ * layouts.replaceTag('ABC', 'Before {%= body %} After');
  * //=> 'Before ABC After'
  * ```
  *
  * @param  {String} `str` The string to use as a replacement value.
- * @param  {String} `content` A string with a `{{body}}` tag where the `str` should be injected.
+ * @param  {String} `content` A string with a `{%= body %}` tag where the `str` should be injected.
  * @return {String} Resulting flattened content.
  * @api public
  */
@@ -359,7 +361,6 @@ Layouts.prototype.replaceTag = function (str, content, options) {
 
 Layouts.prototype.render = function (str, name, options) {
   var layout = this.stack(name, options);
-
   if (layout.content) {
     str = layout.content.replace(this.regex, str);
   }
@@ -368,7 +369,7 @@ Layouts.prototype.render = function (str, name, options) {
 
 
 /**
- * Extend `data` with the given `obj. A custom `_extendMethod` can be
+ * Extend `data` with the given `obj. A custom `_mergeFn` can be
  * passed on `options.extend` to change how data is merged.
  *
  * @param  {Object} `opts` Pass an options object with `data` or `locals`
@@ -380,15 +381,15 @@ Layouts.prototype._mergeData = function (opts, file) {
   var data = {};
 
   // build up the `data` object
-  _.extend(data, opts, opts.locals, opts.data);
-  _.extend(data, file, file.data);
+  extend(data, opts, opts.locals, opts.data);
+  extend(data, file, file.data);
 
   // Flatten nested `data` objects
   this.flattenData(data);
 
   // Extend the context
-  this._extendMethod(this.context, _.omit(data, [
-    'extend',
+  this._mergeFn(this.context, _.omit(data, [
+    'mergeFn',
     'content',
     'delims',
     'layout'

@@ -29,8 +29,8 @@ var extend = _.extend;
  *
  * @param {Object} `cache` A template cache. See [Layouts#set](#set) for object details.
  * @param {Object} `options` Options to use.
- * @param {Array} `options.delims` Template delimiters to use formatted as an array (`['{%=, '%}']`)
- * @param {String} `options.tag` The tag name to use. Default is `body` (e.g. `{%= body %}`)
+ * @param {Array} `options.delims` Template delimiters to use formatted as an array (`['<%=, '%>']`)
+ * @param {String} `options.tag` The tag name to use. Default is `body` (e.g. `<%= body %>`)
  */
 
 function Layouts(options) {
@@ -76,7 +76,7 @@ Layouts.prototype.initLayouts = function (options) {
  * `tag` and `delims` defined in the options.
  *
  * @param  {Object} options
- * @return {String} The actual body tag, e.g. `{%= body %}`
+ * @return {String} The actual body tag, e.g. `<%= body %>`
  * @api private
  */
 
@@ -116,7 +116,7 @@ Layouts.prototype.makeRegex = function (options) {
  * **Example:**
  *
  * ```js
- * layouts.setLayout('a', 'b', '<h1>Foo</h1>\n{%= body %}\n');
+ * layouts.setLayout('a', 'b', '<h1>Foo</h1>\n<%= body %>\n');
  * ```
  *
  * @param {String|Object} `name` If `name` is a string, `layout` and `content` are required.
@@ -149,7 +149,7 @@ Layouts.prototype.setLayout = function (name, data, content) {
  *
  * ```js
  * layouts.getLayout('a');
- * //=> { layout: 'b', content: '<h1>Foo</h1>\n{%= body %}\n' }
+ * //=> { layout: 'b', content: '<h1>Foo</h1>\n<%= body %>\n' }
  * ```
  *
  * @param  {String} `name`
@@ -318,7 +318,7 @@ Layouts.prototype.renderLayout = function (str, context, options) {
 
 
 /**
- * Replace a `{%= body %}` tag with the given `str`. Custom delimiters
+ * Replace a `<%= body %>` tag with the given `str`. Custom delimiters
  * and/or variable may be passed on the `options`. Unlike `renderLayout`,
  * this method does not render templates, it only peforms a basic regex
  * replacement.
@@ -326,12 +326,12 @@ Layouts.prototype.renderLayout = function (str, context, options) {
  * **Example:**
  *
  * ```js
- * layouts.replaceTag('ABC', 'Before {%= body %} After');
+ * layouts.replaceTag('ABC', 'Before <%= body %> After');
  * //=> 'Before ABC After'
  * ```
  *
  * @param  {String} `str` The string to use as a replacement value.
- * @param  {String} `content` A string with a `{%= body %}` tag where the `str` should be injected.
+ * @param  {String} `content` A string with a `<%= body %>` tag where the `str` should be injected.
  * @return {String} Resulting flattened content.
  * @api public
  */

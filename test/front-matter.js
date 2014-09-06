@@ -54,7 +54,7 @@ describe('when nested layouts are defined in front-matter:', function () {
       'C above',
       'B above',
       'A above',
-      'I\'m a Foo',
+      'I\'m a {{ title }}',
       'A below',
       'B below',
       'C below',

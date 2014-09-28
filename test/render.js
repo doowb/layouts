@@ -43,8 +43,6 @@ describe('.render():', function () {
         'F below',
         'last!'
       ].join('\n');
-
-
     });
   });
 

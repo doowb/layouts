@@ -7,9 +7,9 @@
 
 'use strict';
 
-var util = require('util');
+// var util = require('util');
 var isFalsey = require('falsey');
-var Cache = require('config-cache');
+// var Cache = require('config-cache');
 var Delims = require('delims');
 var delims = new Delims();
 var _ = require('lodash');
@@ -34,40 +34,62 @@ var extend = _.extend;
  */
 
 function Layouts(options) {
-  Cache.call(this, options);
-  this.initLayouts(options);
+  this.options = options || {};
+  this.cache = this.options.cache || {};
+  this.defaultOptions(this.options);
 }
-
-util.inherits(Layouts, Cache);
 
 
 /**
- * Initialize defaults.
+ * Initialize default options.
  *
  * @api private
  */
 
-Layouts.prototype.initLayouts = function (options) {
-  this.options = extend({}, options);
-  this._mergeFn = this.options.mergeFn || _.merge;
+Layouts.prototype.defaultOptions = function () {
+  this.option('locals', {});
+  this.option('mergeFn', _.merge);
 
-  // Create the default `{%= body %}` tag
-  this.defaultTag = this.makeTag(this.options);
+  // Define default layout delimiters
+  this.option('layoutDelims', ['{%=','%}']);
 
-  var o = {};
-  extend(o, this.options.cache);
-  extend(o, this.options.layouts);
-  extend(o, this.cache.data);
+  // Define the default `{%= body %}` tag
+  this.option('defaultTag', {
+    delims: ['{%=', '%}'],
+    tag: 'body'
+  });
+};
 
-  // Clean up properties from user options.
-  delete this.options.cache;
-  delete this.cache.data;
-  this.extend(o);
 
-  // Init the context using any locals pass on `options`
-  this.context = extend({}, this.options.locals);
-  // flatten nested `cache` objects
-  this.flattenData(this.cache, 'cache');
+/**
+ * Set or get an option.
+ *
+ * ```js
+ * layout.option('a', true)
+ * layout.option('a')
+ * // => true
+ * ```
+ *
+ * @param {String} `key` The option name.
+ * @param {*} `value` The value to set.
+ * @return {*|Object} Returns `value` if `key` is supplied, or `Options` for chaining when an option is set.
+ * @api public
+ */
+
+Layouts.prototype.option = function(key, value) {
+  var args = [].slice.call(arguments);
+
+  if (args.length === 1 && typeof key === 'string') {
+    return this.options[key];
+  }
+
+  if (typeof key === 'object' && !Array.isArray(key)) {
+    _.extend.apply(_, [this.options].concat(args));
+    return this;
+  }
+
+  this.options[key] = value;
+  return this;
 };
 
 
@@ -81,7 +103,9 @@ Layouts.prototype.initLayouts = function (options) {
  */
 
 Layouts.prototype.makeTag = function (options) {
-  var opts = extend({}, this.options, options);
+  var defaultTag = this.option('defaultTag');
+  var opts = extend({}, defaultTag, options);
+
   opts.delims = opts.delims || ['{%=', '%}'];
   opts.tag = opts.tag || 'body';
 
@@ -129,15 +153,13 @@ Layouts.prototype.makeRegex = function (options) {
 Layouts.prototype.setLayout = function (name, data, content) {
   if (arguments.length === 1 && typeof name === 'object') {
     this.cache = extend({}, this.cache, name);
-    return this;
+  } else {
+    this.cache[name] = {
+      layout: (data && data.layout) ? data.layout : data,
+      content: (data && data.content) ? data.content : content,
+      data: data
+    };
   }
-
-  this.cache[name] = {
-    layout: (data && data.layout) ? data.layout : data,
-    content: (data && data.content) ? data.content : content,
-    data: data
-  };
-
   return this;
 };
 
@@ -172,17 +194,16 @@ Layouts.prototype.getLayout = function (name) {
  */
 
 Layouts.prototype._defaultLayout = function (context, options) {
-  var opts = extend({}, options);
+  // var tag = this.makeTag(options) || this.defaultTag;
+  // var delims = delims.templates(options.delims || );
+  // var settings = extend(delims, options);
+
   var tag = (this.makeTag(options) || this.defaultTag);
   var settings = extend(delims.templates(options.delims || ['{%=','%}']), options);
 
   settings.interpolate = settings.evaluate;
 
-  return {
-    variable: tag,
-    context: opts,
-    settings: settings
-  };
+  return {variable: tag, context: options, settings: settings};
 };
 
 
@@ -218,7 +239,7 @@ Layouts.prototype.assertLayout = function (value, defaultLayout) {
 
 Layouts.prototype.createStack = function (name, options) {
   var opts = extend({}, this.options, options);
-  name = this.assertLayout(name, opts.defaultLayout);
+  name = this.assertLayout(name, this.option('defaultLayout'));
 
   var template = {};
   var stack = [];
@@ -259,20 +280,19 @@ Layouts.prototype.stack = function (name, options) {
   var tag = this.makeTag(opts) || this.defaultTag;
   this.regex = this.makeRegex(opts);
 
-  return _.reduce(stack, function (acc, layout) {
+  return _.reduce(stack, function (acc, value) {
     var content = acc.content || tag;
-    var tmpl = this.cache[layout];
+    var tmpl = this.cache[value];
 
     var data = this._mergeData(opts, tmpl);
     content = content.replace(this.regex, tmpl.content);
     content = this.renderLayout(content, data, opts);
 
-    return {
-      data: this.context,
-      content: content,
-      regex: this.regex,
-      tag: tag
-    };
+    acc.data = data;
+    acc.content = content;
+    acc.regex = this.regex;
+    acc.tag = tag;
+    return acc;
   }.bind(this), {});
 };
 
@@ -309,7 +329,7 @@ Layouts.prototype.stack = function (name, options) {
 Layouts.prototype.renderLayout = function (str, context, options) {
   var layout = this._defaultLayout(context, options);
 
-  var ctx = extend({}, context, this.context, {
+  var ctx = extend({}, context, this.option('locals'), {
     body: layout.variable
   });
 
@@ -359,17 +379,17 @@ Layouts.prototype.replaceTag = function (str, content, options) {
  * @api public
  */
 
-Layouts.prototype.render = function (str, name, options) {
+Layouts.prototype.render = function (content, name, options) {
   var layout = this.stack(name, options);
   if (layout.content) {
-    str = layout.content.replace(this.regex, str);
+    content = layout.content.replace(this.regex, content);
   }
-  return {data: layout.data, content: str};
+  return {data: layout.data, content: content};
 };
 
 
 /**
- * Extend `data` with the given `obj. A custom `_mergeFn` can be
+ * Extend `data` with the given `obj. A custom `mergeFn` can be
  * passed on `options.extend` to change how data is merged.
  *
  * @param  {Object} `opts` Pass an options object with `data` or `locals`
@@ -378,17 +398,18 @@ Layouts.prototype.render = function (str, name, options) {
  */
 
 Layouts.prototype._mergeData = function (opts, file) {
+  var mergeFn = this.option('mergeFn');
   var data = {};
 
-  // build up the `data` object
-  extend(data, opts, opts.locals, opts.data);
-  extend(data, file, file.data);
+  console.log(arguments)
 
-  // Flatten nested `data` objects
-  this.flattenData(data);
+  // build up the `data` object
+  _.merge(data, opts.locals);
+  _.merge(data, file.locals);
+  _.merge(data, file.data);
 
   // Extend the context
-  this._mergeFn(this.context, _.omit(data, [
+  mergeFn(this.option('locals'), _.omit(data, [
     'mergeFn',
     'content',
     'delims',

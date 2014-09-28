@@ -46,9 +46,9 @@ describe('.stack():', function () {
       stack.content.should.eql(expected);
     });
 
-    it('should return a `data` object with.', function () {
+    it.only('should return a `data` object with.', function () {
       var stack = layouts.stack('first');
-      stack.data.should.eql({
+      stack.data.options.locals.should.eql({
         a: 'b',
         c: 'd',
         e: 'f',

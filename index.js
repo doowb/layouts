@@ -11,8 +11,10 @@ var isFalsey = require('falsey');
 var loader = require('load-templates');
 var Delims = require('delims');
 var delims = new Delims();
+
 var _ = require('lodash');
 var extend = _.extend;
+var hasOwn = _.has;
 
 
 /**
@@ -200,16 +202,13 @@ Layouts.prototype.pickLayout = function (value, key) {
   }
 
   if (_.isObject(value)) {
-    if (value.hasOwnProperty('options')
-      && value.options.hasOwnProperty('layout')) {
+    if (hasOwn(value, 'options') && hasOwn(value.options, 'layout')) {
       return value.options.layout;
     }
-    if (value.hasOwnProperty('locals')
-      && value.locals.hasOwnProperty('layout')) {
+    if (hasOwn(value, 'locals') && hasOwn(value.locals, 'layout')) {
       return value.locals.layout;
     }
   }
-
   return null;
 };
 
@@ -244,15 +243,17 @@ Layouts.prototype.getLayout = function (name) {
  */
 
 Layouts.prototype._defaultLayout = function (context, options) {
-  // var tag = this.makeTag(options) || this.defaultTag;
-  // var delims = delims.templates(options.delims || );
-  // var settings = extend(delims, options);
+  var tagopts = this.option('defaultTag');
+  options = extend({}, options);
 
-  var tag = (this.makeTag(options) || this.defaultTag);
-  var settings = extend(delims.templates(options.delims || ['{%=','%}']), options);
+  if (hasOwn(options, 'delims') && hasOwn(options, 'tag')) {
+    tagopts = _.pick(options, ['delims', 'tag']);
+  }
 
-  settings.interpolate = settings.evaluate;
+  var settings = delims.templates(tagopts.delims);
+  var tag = this.makeTag(tagopts);
 
+  extend(settings, options, {interpolate: settings.evaluate});
   return {variable: tag, context: options, settings: settings};
 };
 

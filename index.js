@@ -7,9 +7,8 @@
 
 'use strict';
 
-// var util = require('util');
 var isFalsey = require('falsey');
-// var Cache = require('config-cache');
+var loader = require('load-templates');
 var Delims = require('delims');
 var delims = new Delims();
 var _ = require('lodash');
@@ -134,6 +133,20 @@ Layouts.prototype.makeRegex = function (options) {
 
 
 /**
+ * Initilize [load-templates] with the given options.
+ *
+ * @param  {Object} `options`
+ * @return {RegExp}
+ * @api private
+ */
+
+Layouts.prototype.load = function (options) {
+  var opts = _.merge({}, this.options, options);
+  return loader(opts);
+};
+
+
+/**
  * Store a template on the cache by its `name`, the `layout` to use,
  * and the template's `content.
  *
@@ -151,16 +164,53 @@ Layouts.prototype.makeRegex = function (options) {
  */
 
 Layouts.prototype.setLayout = function (name, data, content) {
-  if (arguments.length === 1 && typeof name === 'object') {
-    this.cache = extend({}, this.cache, name);
-  } else {
-    this.cache[name] = {
-      layout: (data && data.layout) ? data.layout : data,
-      content: (data && data.content) ? data.content : content,
-      data: data
-    };
-  }
+  var template = this.load().apply(this, arguments);
+
+  _.transform(template, function(acc, value, key) {
+      var layout = this.pickLayout(value, key);
+      if (layout) {
+        value.layout = layout;
+      }
+    acc[key] = value;
+  }.bind(this), {});
+
+  this.cache = _.merge({}, this.cache, template);
   return this;
+};
+
+
+/**
+ * Get a cached template by `name`.
+ *
+ * **Example:**
+ *
+ * ```js
+ * layouts.getLayout('a');
+ * //=> { layout: 'b', content: '<h1>Foo</h1>\n<%= body %>\n' }
+ * ```
+ *
+ * @param  {String} `name`
+ * @return {Object} The template object to return.
+ * @api public
+ */
+
+Layouts.prototype.pickLayout = function (value, key) {
+  if (key === 'layout') {
+    return value;
+  }
+
+  if (_.isObject(value)) {
+    if (value.hasOwnProperty('options')
+      && value.options.hasOwnProperty('layout')) {
+      return value.options.layout;
+    }
+    if (value.hasOwnProperty('locals')
+      && value.locals.hasOwnProperty('layout')) {
+      return value.locals.layout;
+    }
+  }
+
+  return null;
 };
 
 
@@ -269,7 +319,7 @@ Layouts.prototype.createStack = function (name, options) {
  *
  * @param  {String} `name` The layout to start with.
  * @param  {Object} `options`
- * @return {Array} The file's layout stack is returned as an array.
+ * @return {Array} The template's layout stack is returned as an array.
  * @api public
  */
 
@@ -393,20 +443,18 @@ Layouts.prototype.render = function (content, name, options) {
  * passed on `options.extend` to change how data is merged.
  *
  * @param  {Object} `opts` Pass an options object with `data` or `locals`
- * @return {Object} `file` A `file` to with `data` to be merged.
+ * @return {Object} `template` A `template` to with `data` to be merged.
  * @api private
  */
 
-Layouts.prototype._mergeData = function (opts, file) {
+Layouts.prototype._mergeData = function (opts, template) {
   var mergeFn = this.option('mergeFn');
   var data = {};
 
-  console.log(arguments)
-
   // build up the `data` object
   _.merge(data, opts.locals);
-  _.merge(data, file.locals);
-  _.merge(data, file.data);
+  _.merge(data, template.locals);
+  _.merge(data, template.data);
 
   // Extend the context
   mergeFn(this.option('locals'), _.omit(data, [

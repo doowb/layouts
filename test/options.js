@@ -15,10 +15,10 @@ var Layouts = require('..');
 describe('layouts options', function () {
   describe('when NO custom `mergeFn` function is passed', function () {
     var layouts = new Layouts();
-    layouts.setLayout('first', 'a', '{%= body %}');
-    layouts.setLayout('a', {layout: 'b', xyz: 'aaa', one: 'two'}, 'A above\n{%= body %}\nA below');
-    layouts.setLayout('b', {layout: 'last', xyz: 'bbb', three: 'four'}, 'B above\n{%= body %}\nB below');
-    layouts.setLayout('last', {xyz: 'zzz'}, 'last!\n{%= body %}\nlast!');
+    layouts.setLayout('first', '{%= body %}', { layout: 'a' });
+    layouts.setLayout('a', 'A above\n{%= body %}\nA below', {layout: 'b', xyz: 'aaa', one: 'two'});
+    layouts.setLayout('b', 'B above\n{%= body %}\nB below', {layout: 'last', xyz: 'bbb', three: 'four'});
+    layouts.setLayout('last', 'last!\n{%= body %}\nlast!', {xyz: 'zzz'});
 
     it('should merge the context so that the inner-most templates context wins.', function () {
       var actual = layouts.stack('first');
@@ -40,10 +40,10 @@ describe('layouts options', function () {
 
   describe('when a custom `mergeFn` function is passed', function () {
     var layouts = new Layouts({mergeFn: _.defaults});
-    layouts.setLayout('a', {layout: 'b', xyz: 'aaa', one: 'two'}, 'A above\n{%= body %}\nA below');
-    layouts.setLayout('b', {layout: 'last', xyz: 'bbb', three: 'four'}, 'B above\n{%= body %}\nB below');
-    layouts.setLayout('last', {xyz: 'zzz'}, 'last!\n{%= body %}\nlast!');
-    layouts.setLayout('first', 'a', '{%= body %}');
+    layouts.setLayout('a', 'A above\n{%= body %}\nA below', {layout: 'b', xyz: 'aaa', one: 'two'});
+    layouts.setLayout('b', 'B above\n{%= body %}\nB below', {layout: 'last', xyz: 'bbb', three: 'four'});
+    layouts.setLayout('last', 'last!\n{%= body %}\nlast!', {xyz: 'zzz'});
+    layouts.setLayout('first', '{%= body %}', { layout: 'a' });
 
     it('should change the order in which the context is merged.', function () {
       var actual = layouts.stack('first');

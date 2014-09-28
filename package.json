@@ -82,6 +82,7 @@
   "dependencies": {
     "delims": "^0.4.0",
     "falsey": "^0.1.0",
+    "load-templates": "^0.4.0",
     "lodash": "^2.4.1"
   }
 }

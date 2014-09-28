@@ -31,14 +31,14 @@ describe('layouts cache', function () {
   it('should add layouts to the cache when using `.setLayout()`.', function () {
     var layouts = new Layouts();
 
-    layouts.setLayout('first', 'a', 'I\'m a {{ title }}');
-    layouts.setLayout('a', 'b', 'A above\n{%= body %}\nA below');
-    layouts.setLayout('b', 'c', 'B above\n{%= body %}\nB below');
-    layouts.setLayout('c', 'd', 'C above\n{%= body %}\nC below');
-    layouts.setLayout('d', 'e', 'D above\n{%= body %}\nD below');
-    layouts.setLayout('e', 'f', 'E above\n{%= body %}\nE below');
-    layouts.setLayout('f', 'last', 'F above\n{%= body %}\nF below');
-    layouts.setLayout('last', undefined, 'last!\n{%= body %}\nlast!');
+    layouts.setLayout('first', 'I\'m a {{ title }}', { layout: 'a' });
+    layouts.setLayout('a', 'A above\n{%= body %}\nA below', { layout: 'b' });
+    layouts.setLayout('b', 'B above\n{%= body %}\nB below', { layout: 'c' });
+    layouts.setLayout('c', 'C above\n{%= body %}\nC below', { layout: 'd' });
+    layouts.setLayout('d', 'D above\n{%= body %}\nD below', { layout: 'e' });
+    layouts.setLayout('e', 'E above\n{%= body %}\nE below', { layout: 'f' });
+    layouts.setLayout('f', 'F above\n{%= body %}\nF below', { layout: 'last' });
+    layouts.setLayout('last', 'last!\n{%= body %}\nlast!', { layout: undefined });
     Object.keys(layouts.cache).length.should.eql(8);
   });
 });

@@ -25,7 +25,7 @@ var page = function (filepath, opts) {
 
 glob.sync('test/fixtures/*.tmpl').forEach(function(filepath) {
   var obj = page(filepath);
-  layouts.setLayout(obj.name, obj.data, obj.content);
+  layouts.setLayout(obj.name, obj.content, obj.data);
 });
 
 describe('when nested layouts are defined in front-matter:', function () {

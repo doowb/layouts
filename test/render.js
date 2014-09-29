@@ -15,17 +15,17 @@ describe('.render():', function () {
   describe('when layouts are defined as objects:', function () {
     var layouts = new Layouts();
 
-    layouts.setLayout({a: { layout: 'b', content: 'A above\n{%= body %}\nA below' }});
-    layouts.setLayout({b: { layout: 'c', content: 'B above\n{%= body %}\nB below' }});
-    layouts.setLayout({c: { layout: 'd', content: 'C above\n{%= body %}\nC below' }});
-    layouts.setLayout({d: { layout: 'e', content: 'D above\n{%= body %}\nD below' }});
     layouts.setLayout({last: { layout: undefined, content: 'last!\n{%= body %}\nlast!' }});
-    layouts.setLayout({e: { layout: 'f', content: 'E above\n{%= body %}\nE below' }});
     layouts.setLayout({f: { layout: 'last', content: 'F above\n{%= body %}\nF below' }});
+    layouts.setLayout({e: { layout: 'f', content: 'E above\n{%= body %}\nE below' }});
+    layouts.setLayout({d: { layout: 'e', content: 'D above\n{%= body %}\nD below' }});
+    layouts.setLayout({c: { layout: 'd', content: 'C above\n{%= body %}\nC below' }});
+    layouts.setLayout({b: { layout: 'c', content: 'B above\n{%= body %}\nB below' }});
+    layouts.setLayout({a: { layout: 'b', content: 'A above\n{%= body %}\nA below' }});
     layouts.setLayout({first: { layout: 'a', content: '{%= body %}' }});
 
     it('should render content into a layout.', function () {
-      var stack = layouts.render('fooo', 'first');
+      var actual = layouts.render('fooo', 'first');
       var expected = [
         'last!',
         'F above',
@@ -34,7 +34,7 @@ describe('.render():', function () {
         'C above',
         'B above',
         'A above',
-        '{%= body %}', // last {%= body %} tag should be unrendered
+        'fooo', // last {%= body %} tag should be unrendered
         'A below',
         'B below',
         'C below',
@@ -43,6 +43,7 @@ describe('.render():', function () {
         'F below',
         'last!'
       ].join('\n');
+      actual.content.should.eql(expected);
     });
   });
 

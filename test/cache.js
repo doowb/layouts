@@ -25,7 +25,7 @@ describe('layouts cache', function () {
         last: { layout: undefined, content: 'last!\n{%= body %}\nlast!' }
       }
     });
-    Object.keys(layouts.cache).length.should.eql(8);
+    Object.keys(layouts.cache).length.should.equal(8);
   });
 
   it('should add layouts to the cache when using `.setLayout()`.', function () {
@@ -39,6 +39,6 @@ describe('layouts cache', function () {
     layouts.setLayout('e', 'E above\n{%= body %}\nE below', { layout: 'f' });
     layouts.setLayout('f', 'F above\n{%= body %}\nF below', { layout: 'last' });
     layouts.setLayout('last', 'last!\n{%= body %}\nlast!', { layout: undefined });
-    Object.keys(layouts.cache).length.should.eql(8);
+    Object.keys(layouts.cache).length.should.equal(8);
   });
 });

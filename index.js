@@ -7,14 +7,18 @@
 
 'use strict';
 
+var debug = require('debug')('layouts');
 var isFalsey = require('falsey');
 var loader = require('load-templates');
+var isObject = require('is-plain-object');
+var reduce = require('reduce-object');
+var omit = require('omit-keys');
+var pick = require('object-pick');
+var merge = require('mixin-deep');
 var Delims = require('delims');
 var delims = new Delims();
 
 var _ = require('lodash');
-var extend = _.extend;
-var hasOwn = _.has;
 
 
 /**
@@ -49,16 +53,14 @@ function Layouts(options) {
 
 Layouts.prototype.defaultOptions = function () {
   this.option('locals', {});
-  this.option('mergeFn', _.merge);
+  this.option('omitKeys', ['mergeFn', 'content', 'delims', 'layout']);
+  this.option('mergeFn', merge);
 
   // Define default layout delimiters
   this.option('layoutDelims', ['{%=','%}']);
 
   // Define the default `{%= body %}` tag
-  this.option('defaultTag', {
-    delims: ['{%=', '%}'],
-    tag: 'body'
-  });
+  this.option('defaultTag', {delims: ['{%=', '%}'], tag: 'body'});
 };
 
 
@@ -81,14 +83,16 @@ Layouts.prototype.option = function(key, value) {
   var args = [].slice.call(arguments);
 
   if (args.length === 1 && typeof key === 'string') {
+    debug('getting option: %s', key);
     return this.options[key];
   }
 
-  if (typeof key === 'object' && !Array.isArray(key)) {
-    _.extend.apply(_, [this.options].concat(args));
+  if (isObject(key)) {
+    merge.apply(merge, [this.options].concat(args));
     return this;
   }
 
+  debug('setting option: %s, %j', key, value);
   this.options[key] = value;
   return this;
 };
@@ -104,8 +108,10 @@ Layouts.prototype.option = function(key, value) {
  */
 
 Layouts.prototype.makeTag = function (options) {
+  debug('making tag: %j', arguments);
+
   var defaultTag = this.option('defaultTag');
-  var opts = extend({}, defaultTag, options);
+  var opts = merge({}, defaultTag, options);
 
   opts.delims = opts.delims || ['{%=', '%}'];
   opts.tag = opts.tag || 'body';
@@ -128,7 +134,8 @@ Layouts.prototype.makeTag = function (options) {
  */
 
 Layouts.prototype.makeRegex = function (options) {
-  var opts = extend({sep: '\\s*'}, this.options, options);
+  debug('making regex: %j', arguments);
+  var opts = merge({sep: '\\s*'}, this.options, options);
   var tag = this.makeTag(opts).replace(/[\]()[{|}]/g, '\\$&');
   return new RegExp(tag, opts.flags || 'g');
 };
@@ -143,7 +150,8 @@ Layouts.prototype.makeRegex = function (options) {
  */
 
 Layouts.prototype.load = function (options) {
-  var opts = _.merge({}, this.options, options);
+  debug('loading: %j', arguments);
+  var opts = merge({}, this.options, options);
   return loader(opts);
 };
 
@@ -166,17 +174,19 @@ Layouts.prototype.load = function (options) {
  */
 
 Layouts.prototype.setLayout = function (name, data, content) {
-  var template = this.load().apply(this, arguments);
+  debug('setting layout: %j', arguments);
 
-  _.transform(template, function(acc, value, key) {
-      var layout = this.pickLayout(value, key);
-      if (layout) {
-        value.layout = layout;
-      }
+  var template = this.load().apply(this, arguments);
+  reduce(template, function(acc, value, key) {
+    var layout = this.pickLayout(value, key);
+    debug('picking layout: %s', layout);
+
+    if (layout) value.layout = layout;
     acc[key] = value;
+    return acc;
   }.bind(this), {});
 
-  this.cache = _.merge({}, this.cache, template);
+  merge(this.cache, template);
   return this;
 };
 
@@ -197,15 +207,15 @@ Layouts.prototype.setLayout = function (name, data, content) {
  */
 
 Layouts.prototype.pickLayout = function (value, key) {
-  if (key === 'layout') {
-    return value;
-  }
+  if (key === 'layout') return value;
 
-  if (_.isObject(value)) {
-    if (hasOwn(value, 'options') && hasOwn(value.options, 'layout')) {
+  if (isObject(value)) {
+    if (hasOwn(value, 'options')
+      && hasOwn(value.options, 'layout')) {
       return value.options.layout;
     }
-    if (hasOwn(value, 'locals') && hasOwn(value.locals, 'layout')) {
+    if (hasOwn(value, 'locals')
+      && hasOwn(value.locals, 'layout')) {
       return value.locals.layout;
     }
   }
@@ -228,11 +238,10 @@ Layouts.prototype.pickLayout = function (value, key) {
  * @api public
  */
 
-Layouts.prototype.getLayout = function (name) {
-  if (!name) {
-    return this.cache;
-  }
-  return this.cache[name];
+Layouts.prototype.getLayout = function (key) {
+  debug('getting layout: %j', key);
+  if (!key) return this.cache;
+  return this.cache[key];
 };
 
 
@@ -243,17 +252,19 @@ Layouts.prototype.getLayout = function (name) {
  */
 
 Layouts.prototype._defaultLayout = function (context, options) {
+  debug('default layout settings: %j', arguments);
+
   var tagopts = this.option('defaultTag');
-  options = extend({}, options);
+  options = merge({}, options);
 
   if (hasOwn(options, 'delims') && hasOwn(options, 'tag')) {
-    tagopts = _.pick(options, ['delims', 'tag']);
+    tagopts = pick(options, ['delims', 'tag']);
   }
 
   var settings = delims.templates(tagopts.delims);
   var tag = this.makeTag(tagopts);
 
-  extend(settings, options, {interpolate: settings.evaluate});
+  merge(settings, options, {interpolate: settings.evaluate});
   return {variable: tag, context: options, settings: settings};
 };
 
@@ -269,6 +280,7 @@ Layouts.prototype._defaultLayout = function (context, options) {
  */
 
 Layouts.prototype.assertLayout = function (value, defaultLayout) {
+  debug('asserting layout: %j', arguments);
   if (value === false || (value && isFalsey(value))) {
     return null;
   } else if (!value || value === true) {
@@ -289,7 +301,9 @@ Layouts.prototype.assertLayout = function (value, defaultLayout) {
  */
 
 Layouts.prototype.createStack = function (name, options) {
-  var opts = extend({}, this.options, options);
+  debug('creating stack for: %s', name);
+
+  var opts = merge({}, this.options, options);
   name = this.assertLayout(name, this.option('defaultLayout'));
 
   var template = {};
@@ -325,17 +339,21 @@ Layouts.prototype.createStack = function (name, options) {
  */
 
 Layouts.prototype.stack = function (name, options) {
+  debug('stack: %s:', name);
+
   var stack = this.createStack(name, options);
-  var opts = extend(this.options, options);
+  var opts = merge(this.options, options);
 
   var tag = this.makeTag(opts) || this.defaultTag;
   this.regex = this.makeRegex(opts);
 
-  return _.reduce(stack, function (acc, value) {
+  return reduce(stack, function (acc, value) {
+    debug('reducing stack: %j:', acc);
+
     var content = acc.content || tag;
     var tmpl = this.cache[value];
 
-    var data = this._mergeData(opts, tmpl);
+    var data = this._mergeData(tmpl);
     content = content.replace(this.regex, tmpl.content);
     content = this.renderLayout(content, data, opts);
 
@@ -345,6 +363,30 @@ Layouts.prototype.stack = function (name, options) {
     acc.tag = tag;
     return acc;
   }.bind(this), {});
+};
+
+
+/**
+ * Replace a `<%= body %>` tag with the given `str`. Custom delimiters
+ * and/or variable may be passed on the `options`. Unlike `renderLayout`,
+ * this method does not render templates, it only peforms a basic regex
+ * replacement.
+ *
+ * **Example:**
+ *
+ * ```js
+ * layouts.replaceTag('ABC', 'Before <%= body %> After');
+ * //=> 'Before ABC After'
+ * ```
+ *
+ * @param  {String} `str` The string to use as a replacement value.
+ * @param  {String} `content` A string with a `<%= body %>` tag where the `str` should be injected.
+ * @return {String} Resulting flattened content.
+ * @api public
+ */
+
+Layouts.prototype.replaceTag = function (str, content, options) {
+  return content.replace(this.makeRegex(options), str);
 };
 
 
@@ -378,37 +420,14 @@ Layouts.prototype.stack = function (name, options) {
  */
 
 Layouts.prototype.renderLayout = function (str, context, options) {
-  var layout = this._defaultLayout(context, options);
+  debug('rendering layout: %j:', arguments);
 
-  var ctx = extend({}, context, this.option('locals'), {
+  var layout = this._defaultLayout(context, options);
+  var ctx = merge({}, context, this.option('locals'), {
     body: layout.variable
   });
 
   return _.template(str, ctx, layout.settings);
-};
-
-
-/**
- * Replace a `<%= body %>` tag with the given `str`. Custom delimiters
- * and/or variable may be passed on the `options`. Unlike `renderLayout`,
- * this method does not render templates, it only peforms a basic regex
- * replacement.
- *
- * **Example:**
- *
- * ```js
- * layouts.replaceTag('ABC', 'Before <%= body %> After');
- * //=> 'Before ABC After'
- * ```
- *
- * @param  {String} `str` The string to use as a replacement value.
- * @param  {String} `content` A string with a `<%= body %>` tag where the `str` should be injected.
- * @return {String} Resulting flattened content.
- * @api public
- */
-
-Layouts.prototype.replaceTag = function (str, content, options) {
-  return content.replace(this.makeRegex(options), str);
 };
 
 
@@ -431,43 +450,58 @@ Layouts.prototype.replaceTag = function (str, content, options) {
  */
 
 Layouts.prototype.render = function (content, name, options) {
+  debug('rendering: %j:', arguments);
+
   var layout = this.stack(name, options);
   if (layout.content) {
     content = layout.content.replace(this.regex, content);
   }
+
   return {data: layout.data, content: content};
 };
 
 
 /**
  * Extend `data` with the given `obj. A custom `mergeFn` can be
- * passed on `options.extend` to change how data is merged.
+ * passed on `options.merge` to change how data is merged.
  *
  * @param  {Object} `opts` Pass an options object with `data` or `locals`
  * @return {Object} `template` A `template` to with `data` to be merged.
  * @api private
  */
 
-Layouts.prototype._mergeData = function (opts, template) {
+Layouts.prototype._mergeData = function (template) {
+  debug('merging data: %j:', arguments);
+
+  var omitKeys = this.option('omitKeys');
   var mergeFn = this.option('mergeFn');
+  var locals = this.option('locals');
   var data = {};
 
   // build up the `data` object
-  _.merge(data, opts.locals);
-  _.merge(data, template.locals);
-  _.merge(data, template.data);
+  merge(data, template.locals);
+  merge(data, template.data);
 
   // Extend the context
-  mergeFn(this.option('locals'), _.omit(data, [
-    'mergeFn',
-    'content',
-    'delims',
-    'layout'
-  ]));
-
+  mergeFn(locals, omit(data, omitKeys));
   return this;
 };
 
+
+/**
+ * Get the native `typeof` a value.
+ *
+ * @api private
+ */
+
+function typeOf(val) {
+  return {}.toString.call(val).toLowerCase()
+    .replace(/\[object ([\S]+)\]/, '$1');
+}
+
+function hasOwn(o, prop) {
+  return {}.hasOwnProperty.call(o, prop);
+}
 
 /**
  * Expose `Layouts`

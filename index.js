@@ -7,18 +7,20 @@
 
 'use strict';
 
+var util = require('util');
 var debug = require('debug')('layouts');
+var typeOf = require('kind-of');
+var Options = require('options-cache');
 var isFalsey = require('falsey');
-var loader = require('load-templates');
-var isObject = require('is-plain-object');
-var reduce = require('reduce-object');
-var omit = require('omit-keys');
-var pick = require('object-pick');
-var merge = require('mixin-deep');
+var Loader = require('load-templates');
+var isObject = require('isobject');
+var reduce = require('object.reduce');
+var omit = require('object.omit');
+var pick = require('object.pick');
 var Delims = require('delims');
 var delims = new Delims();
-
 var _ = require('lodash');
+var merge = _.merge;
 
 
 /**
@@ -39,62 +41,61 @@ var _ = require('lodash');
  */
 
 function Layouts(options) {
-  this.options = options || {};
+  Options.call(this, options);
   this.cache = this.options.cache || {};
   this.defaultOptions(this.options);
 }
 
+util.inherits(Layouts, Options);
+
 
 /**
  * Initialize default options.
+ *
+ *   - `layoutDelims`: default layout delimiters
+ *   - `defaultTag`: Define the default `{%= body %}` tag
+ *   - `omitKeys`: Keys that should be omitted from a normalized layout object.
  *
  * @api private
  */
 
 Layouts.prototype.defaultOptions = function () {
   this.option('locals', {});
-  this.option('omitKeys', ['mergeFn', 'content', 'delims', 'layout']);
   this.option('mergeFn', merge);
-
-  // Define default layout delimiters
-  this.option('layoutDelims', ['{%=','%}']);
-
-  // Define the default `{%= body %}` tag
+  this.option('layoutDelims', ['{%=', '%}']);
   this.option('defaultTag', {delims: ['{%=', '%}'], tag: 'body'});
+  this.option('omitKeys', ['mergeFn', 'content', 'delims', 'layout']);
 };
 
 
 /**
- * Set or get an option.
+ * Initilize the template loader with the given `options`.
+ * By default [load-templates] is used.
  *
- * ```js
- * layout.option('a', true)
- * layout.option('a')
- * // => true
- * ```
- *
- * @param {String} `key` The option name.
- * @param {*} `value` The value to set.
- * @return {*|Object} Returns `value` if `key` is supplied, or `Options` for chaining when an option is set.
+ * @param  {Object} `options`
  * @api public
  */
 
-Layouts.prototype.option = function(key, value) {
-  var args = [].slice.call(arguments);
+Layouts.prototype.loader = function (options) {
+  debug('loader: %j', arguments);
+  var opts = merge({}, this.options, options);
+  var loader = new Loader(opts);
+  return loader.load.apply(loader, arguments);
+};
 
-  if (args.length === 1 && typeof key === 'string') {
-    debug('getting option: %s', key);
-    return this.options[key];
-  }
 
-  if (isObject(key)) {
-    merge.apply(merge, [this.options].concat(args));
-    return this;
-  }
+/**
+ * Load templates.
+ *
+ * @param  {Object} `options`
+ * @return {Object}
+ * @api private
+ */
 
-  debug('setting option: %s, %j', key, value);
-  this.options[key] = value;
-  return this;
+Layouts.prototype.load = function (options) {
+  debug('loading: %j', arguments);
+  var foo = this.loader.apply(this, arguments);
+  return foo;
 };
 
 
@@ -142,21 +143,6 @@ Layouts.prototype.makeRegex = function (options) {
 
 
 /**
- * Initilize [load-templates] with the given options.
- *
- * @param  {Object} `options`
- * @return {RegExp}
- * @api private
- */
-
-Layouts.prototype.load = function (options) {
-  debug('loading: %j', arguments);
-  var opts = merge({}, this.options, options);
-  return loader(opts);
-};
-
-
-/**
  * Store a template on the cache by its `name`, the `layout` to use,
  * and the template's `content.
  *
@@ -176,47 +162,48 @@ Layouts.prototype.load = function (options) {
 Layouts.prototype.setLayout = function (name, data, content) {
   debug('setting layout: %j', arguments);
 
-  var template = this.load().apply(this, arguments);
-  reduce(template, function(acc, value, key) {
-    var layout = this.pickLayout(value, key);
+  var template = this.load.apply(this, arguments);
+
+  reduce(template, function (acc, value, key) {
     debug('picking layout: %s', layout);
 
-    if (layout) value.layout = layout;
+    var layout = this.pickLayout(value, key);
+    if (layout) {
+      value.layout = layout;
+    }
     acc[key] = value;
     return acc;
-  }.bind(this), {});
+  }.bind(this), this.cache);
 
-  merge(this.cache, template);
   return this;
 };
 
 
 /**
- * Get a cached template by `name`.
+ * Get the `layout` to use for a template by looking for
+ * a `layout` property on the template object.
  *
  * **Example:**
  *
  * ```js
- * layouts.getLayout('a');
- * //=> { layout: 'b', content: '<h1>Foo</h1>\n<%= body %>\n' }
+ * layouts.pickLayout('a');
+ * //=> 'b'
  * ```
  *
- * @param  {String} `name`
- * @return {Object} The template object to return.
+ * @param  {Object} `template` The template object.
+ * @return {String} The name of the layout to use.
  * @api public
  */
 
-Layouts.prototype.pickLayout = function (value, key) {
-  if (key === 'layout') return value;
-
-  if (isObject(value)) {
-    if (hasOwn(value, 'options')
-      && hasOwn(value.options, 'layout')) {
-      return value.options.layout;
+Layouts.prototype.pickLayout = function (template) {
+  if (isObject(template)) {
+    if (hasOwn(template, 'options')
+      && hasOwn(template.options, 'layout')) {
+      return template.options.layout;
     }
-    if (hasOwn(value, 'locals')
-      && hasOwn(value.locals, 'layout')) {
-      return value.locals.layout;
+    if (hasOwn(template, 'locals')
+      && hasOwn(template.locals, 'layout')) {
+      return template.locals.layout;
     }
   }
   return null;
@@ -224,17 +211,17 @@ Layouts.prototype.pickLayout = function (value, key) {
 
 
 /**
- * Get a cached template by `name`.
+ * Get a cached layout template by `key`.
  *
  * **Example:**
  *
  * ```js
- * layouts.getLayout('a');
+ * layouts.getLayout('foo');
  * //=> { layout: 'b', content: '<h1>Foo</h1>\n<%= body %>\n' }
  * ```
  *
- * @param  {String} `name`
- * @return {Object} The template object to return.
+ * @param  {String} `key` The key to lookup. This is often a full filepath or file name.
+ * @return {Object}
  * @api public
  */
 
@@ -246,7 +233,8 @@ Layouts.prototype.getLayout = function (key) {
 
 
 /**
- * Define the default layout variable and delimiters to be used.
+ * Define the default layout `body` tag variable and delimiters
+ * to be used.
  *
  * @api private
  */
@@ -493,11 +481,6 @@ Layouts.prototype._mergeData = function (template) {
  *
  * @api private
  */
-
-function typeOf(val) {
-  return {}.toString.call(val).toLowerCase()
-    .replace(/\[object ([\S]+)\]/, '$1');
-}
 
 function hasOwn(o, prop) {
   return {}.hasOwnProperty.call(o, prop);

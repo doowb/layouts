@@ -1,7 +1,7 @@
 {
   "name": "layouts",
   "description": "Wrap templates with layouts. Layouts can be nested and optionally use other layouts.",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "homepage": "https://github.com/jonschlinkert/layouts",
   "author": {
     "name": "Jon Schlinkert",
@@ -72,7 +72,6 @@
     "test": "mocha -R spec"
   },
   "devDependencies": {
-    "chalk": "^0.5.1",
     "globby": "^0.1.1",
     "gray-matter": "^0.5.1",
     "mocha": "*",
@@ -84,13 +83,9 @@
     "debug": "^2.0.0",
     "delims": "^0.4.0",
     "falsey": "^0.1.0",
-    "isobject": "^0.2.0",
     "kind-of": "^0.1.0",
     "load-templates": "^0.4.2",
     "lodash": "^2.4.1",
-    "object.omit": "^0.2.0",
-    "object.pick": "^0.1.1",
-    "object.reduce": "^0.1.3",
-    "options-cache": "^0.3.1"
+    "option-cache": "^0.1.1"
   }
 }

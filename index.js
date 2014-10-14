@@ -9,14 +9,10 @@
 
 var util = require('util');
 var debug = require('debug')('layouts');
-var typeOf = require('kind-of');
-var Options = require('options-cache');
-var isFalsey = require('falsey');
 var Loader = require('load-templates');
-var isObject = require('isobject');
-var reduce = require('object.reduce');
-var omit = require('object.omit');
-var pick = require('object.pick');
+var Options = require('option-cache');
+var isFalsey = require('falsey');
+var typeOf = require('kind-of');
 var Delims = require('delims');
 var delims = new Delims();
 var _ = require('lodash');
@@ -92,7 +88,7 @@ Layouts.prototype.loader = function (options) {
  * @api private
  */
 
-Layouts.prototype.load = function (options) {
+Layouts.prototype.load = function () {
   debug('loading: %j', arguments);
   var foo = this.loader.apply(this, arguments);
   return foo;
@@ -164,7 +160,7 @@ Layouts.prototype.setLayout = function (name, data, content) {
 
   var template = this.load.apply(this, arguments);
 
-  reduce(template, function (acc, value, key) {
+  _.reduce(template, function (acc, value, key) {
     debug('picking layout: %s', layout);
 
     var layout = this.pickLayout(value, key);
@@ -196,7 +192,7 @@ Layouts.prototype.setLayout = function (name, data, content) {
  */
 
 Layouts.prototype.pickLayout = function (template) {
-  if (isObject(template)) {
+  if (typeOf(template) === 'object') {
     if (hasOwn(template, 'options')
       && hasOwn(template.options, 'layout')) {
       return template.options.layout;
@@ -246,7 +242,7 @@ Layouts.prototype._defaultLayout = function (context, options) {
   options = merge({}, options);
 
   if (hasOwn(options, 'delims') && hasOwn(options, 'tag')) {
-    tagopts = pick(options, ['delims', 'tag']);
+    tagopts = _.pick(options, ['delims', 'tag']);
   }
 
   var settings = delims.templates(tagopts.delims);
@@ -335,7 +331,7 @@ Layouts.prototype.stack = function (name, options) {
   var tag = this.makeTag(opts) || this.defaultTag;
   this.regex = this.makeRegex(opts);
 
-  return reduce(stack, function (acc, value) {
+  return _.reduce(stack, function (acc, value) {
     debug('reducing stack: %j:', acc);
 
     var content = acc.content || tag;
@@ -471,7 +467,7 @@ Layouts.prototype._mergeData = function (template) {
   merge(data, template.data);
 
   // Extend the context
-  mergeFn(locals, omit(data, omitKeys));
+  mergeFn(locals, _.omit(data, omitKeys));
   return this;
 };
 

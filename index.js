@@ -7,6 +7,8 @@
 
 'use strict';
 
+// require('require-progress');
+
 var util = require('util');
 var debug = require('debug')('layouts');
 var Loader = require('load-templates');

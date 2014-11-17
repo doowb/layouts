@@ -29,20 +29,17 @@
   },
   "devDependencies": {
     "array-slice": "^0.2.2",
-    "globby": "^0.1.1",
-    "gray-matter": "^0.5.1",
     "mocha": "*",
+    "option-cache": "^0.1.4",
     "should": "^4.0.4"
   },
   "dependencies": {
     "chalk": "^0.5.1",
-    "debug": "^2.0.0",
     "delims": "^0.4.0",
     "falsey": "^0.1.0",
-    "kind-of": "^0.1.0",
-    "load-templates": "^0.4.2",
-    "lodash": "^2.4.1",
-    "option-cache": "^0.1.4"
+    "get-value": "^0.3.2",
+    "kind-of": "^0.1.2",
+    "lodash": "^2.4.1"
   },
   "keywords": [
     "atpl",

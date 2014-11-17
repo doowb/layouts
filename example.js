@@ -1,10 +1,12 @@
 'use strict';
 
+require('require-progress');
+
 var path = require('path');
 var util = require('util');
 var Options = require('option-cache');
 var slice = require('array-slice');
-var layout = require('./index2');
+var layout = require('./');
 var _ = require('lodash');
 var extend = _.extend;
 
@@ -39,6 +41,8 @@ util.inherits(Engine, Options);
 Engine.prototype.defaultOptions = function () {
   this.option('delims', {
     content: ['<%', '%>'],
+
+    // any of these will work
     // layout: /\{%([\s\S]+?)%}/g,
     // layout: '{%([\\s\\S]+?)%}',
     layout: ['{%', '%}'],
@@ -137,15 +141,20 @@ Engine.prototype.create = function (type, plural, options) {
   return this;
 };
 
+/**
+ * USAGE EXAMPLES
+ */
+
+var chalk = require('chalk');
 var engine = new Engine();
 
 engine
-  .layout('default', '[default]{% body %}[default]', {name: 'Brian Woodward'})
-  .layout('aaa', '[aaa]{% body %}[aaa]', {layout: 'bbb'})
-  .layout('bbb', '[bbb]{% body %}[bbb]', {layout: 'ccc'})
-  .layout('ccc', '[ccc]{% body %}[ccc]', {layout: 'default'})
-  .layout('ddd', '[ddd]<% body %>[ddd]', {delims: {layout: ['<%', '%>']}})
-  .layout('eee', '[eee]{% body %}[eee]')
+  .layout('default', 'default above\n{% body %}\ndefault below', {name: 'brian woodward'})
+  .layout('aaa', 'aaa above\n{% body %}\naaa below', {layout: 'bbb'})
+  .layout('bbb', 'bbb above\n{% body %}\nbbb below', {layout: 'ccc'})
+  .layout('ccc', 'ccc above\n{% body %}\nccc below', {layout: 'default'})
+  .layout('ddd', 'ddd above\n<% body %>\nddd below', {delims: {layout: ['<%', '%>']}})
+  .layout('eee', 'eee above\n{% body %}\neee below')
 
 engine.partial('sidebar1', 'This is sidebar 1.', {layout: 'ddd'});
 engine.partial('sidebar2', 'This is sidebar 2.', {layout: 'eee'});
@@ -154,12 +163,28 @@ engine.page('about', {content: 'This is content', layout: 'ccc'}, { engine: 'hbs
 engine.page('contact', {content: 'This is content', layout: 'default'}, { engine: 'hbs' });
 
 
+// console.log(engine.applyLayout('home', 'pages'))
+// console.log(engine.applyLayout('aaa', 'layouts'))
+
+console.log(chalk.green('\nPartials'));
+
 Object.keys(engine.cache.partials).forEach(function(name) {
-  console.log(engine.applyLayout(name, 'partials'))
+  console.log();
+  console.log(engine.applyLayout(name, 'partials'));
 });
 
+console.log(chalk.green('\nPages'));
+
 Object.keys(engine.cache.pages).forEach(function(name) {
-  console.log(engine.applyLayout(name, 'pages'))
+  console.log();
+  console.log(engine.applyLayout(name, 'pages'));
+});
+
+console.log(chalk.green('\nLayouts'));
+
+Object.keys(engine.cache.layouts).forEach(function(name) {
+  console.log();
+  console.log(engine.applyLayout(name, 'layouts'));
 });
 
 

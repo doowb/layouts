@@ -9,17 +9,13 @@ var _ = require('lodash');
 var process = require('./lib/interpolate');
 
 /**
- * Given an object of `layouts`, and the `name` of a starting layout:
- *  1. build a layout stack (array of layouts) for the given `string`, then
- *  1. iterate over the stack, wrapping each layout in the stack around the string
- *  1. return the string with layouts applied
- *
+ * @name layouts
  * @param {String} `str` The content string that should be wrapped with a layout.
  * @param {String} `name` The name of the layout to use.
- * @param {Object} `layouts` Object of layouts. `name` should be a key on this object.
+ * @param {Object} `layout{s}` Object of layouts. `name` should be a key on this object.
  * @param {Object} `options`
- *     @option {Object} [options] `settings` Optionally pass an object of delimiters to pass to Lo-Dash
- *     @option {Object} [options] `defaultLayout` Optionally pass the name of the default layout to use.
+ *     @option {Object} [options] `delims` Custom delimiters to use.
+ *     @option {Object} [options] `defaultLayout` Default layout to use.
  * @return {String} Returns the original string, wrapped with a layout, or layout stack.
  * @api public
  */

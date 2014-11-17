@@ -1,9 +1,9 @@
-# layouts [![NPM version](https://badge.fury.io/js/layouts.png)](http://badge.fury.io/js/layouts)
+# layouts [![NPM version](https://badge.fury.io/js/layouts.svg)](http://badge.fury.io/js/layouts)
 
 > Wrap templates with layouts. Layouts can be nested and optionally use other layouts.
 
 ## Install
-#### [npm](npmjs.org)
+### Install with [npm](npmjs.org)
 
 ```bash
 npm i layouts --save
@@ -19,124 +19,35 @@ var layouts = require('layouts');
 
 **Heads up!** Although most of the examples use `<%= foo %>` syntax for delimiters, you can change these to be whatever you need.
 
-### [.loader](index.js#L75)
+## [.layouts](index.js#L43)
 
-* `options` **{Object}**    
+Given an object of `layouts`, and the `name` of a starting layout:
 
-Initilize the template loader with the given `options`.
-By default [load-templates] is used.
+* `str` **{String}**: The content string that should be wrapped with a layout.    
+* `name` **{String}**: The name of the layout to use.    
+* `layout{s}` **{Object}**: Object of layouts. `name` should be a key on this object.    
+* `options` **{Object}**  
+    - `delims` **{Object}**: Custom delimiters to use.
+    - `defaultLayout` **{Object}**: Default layout to use.
+      
+* `returns` **{String}**: Returns the original string, wrapped with a layout, or layout stack.  
 
-### [.setLayout](index.js#L158)
+  1. build a layout stack (array of layouts) for the given `string`, then
+  1. iterate over the stack, wrapping each layout in the stack around the string
+  1. return the string with layouts applied
 
-Store a template on the cache by its `name`, the `layout` to use, and the template's `content.
-
-* `name` **{String|Object}**: If `name` is a string, `layout` and `content` are required.    
-* `data` **{String|Object}**: Pass a string defining the name of layout to use for the given template, or pass an object with a `layout` property.    
-* `content` **{String}**: The template "content", this will not be compiled or rendered.    
-
-**Example:**
+**Example**
 
 ```js
-layouts.setLayout('a', 'b', '<h1>Foo</h1>\n<%= body %>\n');
+layouts('<div>This is content</div>', 'base', {base: {content: 'base above\n{% body %}\nbase below'}});
 ```
 
-### [.pickLayout](index.js#L194)
+Results in:
 
-Get the `layout` to use for a template by looking for a `layout` property on the template object.
-
-* `template` **{Object}**: The template object.    
-* `returns` **{String}**: The name of the layout to use.  
-
-**Example:**
-
-```js
-layouts.pickLayout('a');
-//=> 'b'
-```
-
-### [.getLayout](index.js#L224)
-
-Get a cached layout template by `key`.
-
-* `key` **{String}**: The key to lookup. This is often a full filepath or file name.    
-* `returns`: {Object}  
-
-**Example:**
-
-```js
-layouts.getLayout('foo');
-//=> { layout: 'b', content: '<h1>Foo</h1>\n<%= body %>\n' }
-```
-
-### [.stack](index.js#L325)
-
-Reduce a layout stack for a template into a single flattened layout. Pass the `name` of the layout defined for the template (e.g. the first layout in the stack).
-
-* `name` **{String}**: The layout to start with.    
-* `options` **{Object}**    
-* `returns` **{Array}**: The template's layout stack is returned as an array.  
-
-**Example:**
-
-```js
-layouts.stack('base');
-```
-
-### [.replaceTag](index.js#L372)
-
-Replace a `<%= body %>` tag with the given `str`. Custom delimiters and/or variable may be passed on the `options`. Unlike `renderLayout`, this method does not render templates, it only peforms a basic regex replacement.
-
-* `str` **{String}**: The string to use as a replacement value.    
-* `content` **{String}**: A string with a `<%= body %>` tag where the `str` should be injected.    
-* `returns` **{String}**: Resulting flattened content.  
-
-**Example:**
-
-```js
-layouts.replaceTag('ABC', 'Before <%= body %> After');
-//=> 'Before ABC After'
-```
-
-### [.renderLayout](index.js#L406)
-
-Render a layout using Lo-Dash, by passing content (`str`), `context` and `options`.
-
-* `str` **{String}**: Content for the layout to render.    
-* `options` **{Object}**: Additional options used for building the render settings.    
-* `returns` **{String}**: Rendered string.  
-
-**Example:**
-
-```js
-layouts.renderLayout(str, context, options);
-```
-
-Since this method uses Lo-Dash to process templates custom delimiters
-may be passed on the `options.delims` property. This allows layouts to
-be rendered prior to injecting "pages" or other str with templates that
-_should not_ be rendered when the layout stack is processed.
-
-**Example:**
-
-```js
-layouts.renderLayout(str, context, {
-  delims: ['<%','%>']
-});
-```
-
-### [.render](index.js#L436)
-
-Return an object with the string (`str`) and `data` required to build a final layout. This is useful if you need to use your own template engine to handle this final step.
-
-* `str` **{String}**: The string to be injected into the layout. Usually a page, or inner layout, etc.    
-* `name` **{String}**: The name of the first layout to use to build the stack.    
-* `returns` **{Object}**: Resulting flattened layout.  
-
-**Example:**
-
-```js
-var page = layouts.render(str, 'base');
-var tmpl = _.template(page, context);
+```html
+base above
+<div>This is content</div>
+base below
 ```
 
 ## Author
@@ -147,9 +58,9 @@ var tmpl = _.template(page, context);
 + [twitter/jonschlinkert](http://twitter.com/jonschlinkert) 
 
 ## License
-Copyright (c) 2014 Jon Schlinkert, contributors.  
+Copyright (c) 2014 Jon Schlinkert  
 Released under the MIT license
 
 ***
 
-_This file was generated by [verb-cli](https://github.com/assemble/verb-cli) on October 13, 2014._
+_This file was generated by [verb](https://github.com/assemble/verb) on November 17, 2014._

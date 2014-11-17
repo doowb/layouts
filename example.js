@@ -2,6 +2,7 @@
 
 var path = require('path');
 var util = require('util');
+var Options = require('option-cache');
 var slice = require('array-slice');
 var layout = require('./wrap');
 var _ = require('lodash');
@@ -19,10 +20,22 @@ var extend = _.extend;
  */
 
 function Engine(options) {
-  this.options = options || {};
+  Options.call(this, options);
   this.cache = {};
   this.defaultTemplates();
+  this.defaultOptions();
 }
+
+util.inherits(Engine, Options);
+
+/**
+ * Add some default template "types"
+ */
+
+Engine.prototype.defaultOptions = function () {
+  this.enable('debug');
+};
+
 
 /**
  * Add some default template "types"
@@ -49,11 +62,11 @@ Engine.prototype.load = function (key, value, locals, options) {
   if (typeof value === 'string') {
     value = {content: value};
   }
-  var template = value || {};
-  template.layout = template.layout || locals.layout;
-  template.locals = locals || {};
-  template.options = options || {};
-  return template;
+  var o = value || {};
+  o.locals = locals || {};
+  o.options = options || {};
+  o.layout = o.layout || o.locals.layout || o.options.layout;
+  return o;
 };
 
 
@@ -72,8 +85,10 @@ Engine.prototype.load = function (key, value, locals, options) {
 Engine.prototype.applyLayout = function (name, collection) {
   var template = this.cache[collection][name];
   var name = template.layout || template.locals.layout;
-  return layout(template.content, name, this.cache.layouts);
+  var opts = extend({}, this.options, {settings: {evaluate: /\{%([\s\S]+?)%}/g}});
+  return layout(template.content, name, this.cache.layouts, opts);
 };
+// { interpolate: /{%=([\s\S]+?)%}/g, evaluate: /{%([\s\S]+?)%}/g, escape: /{%-([\s\S]+?)%}/g }
 
 /**
  * Create template "types"
@@ -101,16 +116,20 @@ Engine.prototype.create = function (type, plural, options, cb) {
 var engine = new Engine();
 
 engine
-  .layout('default', '[default]<%= body %>[default]', {name: 'Brian Woodward'})
-  .layout('aaa', '[aaa]<%= body %>[aaa]', {name: 'Brian Woodward', layout: 'bbb'})
-  .layout('bbb', '[bbb]<%= body %>[bbb]', {name: 'Brian Woodward', layout: 'default'});
-engine.partial('aaa', 'This is content', {name: 'Brian Woodward', layout: 'aaa'});
-engine.page('aaa', {content: 'This is content'}, {name: 'Brian Woodward'}, { engine: 'lodash' });
-engine.page('bbb', {content: 'This is content'}, {name: 'Brian Woodward'}, { engine: 'hbs' });
-engine.page('ccc', {content: 'This is content', layout: 'default'}, {name: 'Brian Woodward'}, { engine: 'hbs' });
+  .layout('default', '[default]<% body %>[default]', {name: 'Brian Woodward'})
+  .layout('aaa', '[aaa]<%= body %>[aaa]', {layout: 'bbb'})
+  .layout('bbb', '[bbb]<%= body %>[bbb]', {layout: 'default'})
+  .layout('ccc', '[ccc]<%= body %>[ccc]')
+  .layout('ccc', '[ccc]<% body %>[ccc]')
+  .layout('eee', '[eee]{% body %}[eee]')
 
-var a = engine.applyLayout('aaa', 'partials');
-var b = engine.applyLayout('ccc', 'pages');
+engine.partial('sidebar', 'This is a sidebar.', {layout: 'aaa'});
+engine.page('home', {content: 'This is content'}, { engine: 'lodash' });
+engine.page('about', {content: 'This is content'}, { engine: 'hbs' });
+engine.page('contact', {content: 'This is content', layout: 'default'}, { engine: 'hbs' });
+
+var a = engine.applyLayout('sidebar', 'partials');
+var b = engine.applyLayout('contact', 'pages');
 console.log(a)
 console.log(b)
 // console.log(util.inspect(engine, null, 10));

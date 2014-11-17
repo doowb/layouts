@@ -16,27 +16,26 @@ describe('layout delimiters', function () {
 
   it('should use default delimiters.', function () {
     var actual = layouts.replaceTag('INNER', '{%= body %}[[body]]{%body%}{% body %}<%body%>');
-    var expected = 'INNER[[body]]{%body%}{% body %}<%body%>';
-    actual.should.eql(expected);
+    actual.should.eql('INNER[[body]]{%body%}{% body %}<%body%>');
   });
   it('should use custom delimiters.', function () {
     var actual = layouts.replaceTag('INNER', '{%= body %}[[body]]{%body%}{% body %}<%body%>', {delims: ['{%', '%}']});
-    var expected = '{%= body %}[[body]]INNERINNER<%body%>';
-    actual.should.eql(expected);
+    actual.should.eql('{%= body %}[[body]]INNERINNER<%body%>');
   });
   it('should use custom delimiters.', function () {
     var actual = layouts.replaceTag('INNER', '{{ body }}[[body]]{%body%}{% body %}<%body%>', {delims: ['{{', '}}']});
-    var expected = 'INNER[[body]]{%body%}{% body %}<%body%>';
-    actual.should.eql(expected);
+    actual.should.eql('INNER[[body]]{%body%}{% body %}<%body%>');
   });
   it('should use custom delimiters.', function () {
     var actual = layouts.replaceTag('INNER', '{%= body %}[[body]]{%body%}{% body %}<%body%>', {delims: ['[[', ']]']});
-    var expected = '{%= body %}INNER{%body%}{% body %}<%body%>';
-    actual.should.eql(expected);
+    actual.should.eql('{%= body %}INNER{%body%}{% body %}<%body%>');
   });
   it('should use custom delimiters.', function () {
     var actual = layouts.replaceTag('INNER', '{%= body %}[[body]]{%body%}{% body %}<%body%>', {delims: ['<%', '%>']});
-    var expected = '{%= body %}[[body]]{%body%}{% body %}INNER';
-    actual.should.eql(expected);
+    actual.should.eql('{%= body %}[[body]]{%body%}{% body %}INNER');
+  });
+  it('should use custom delimiters.', function () {
+    var actual = layouts.replaceTag('INNER', '<<% body %>>{%= body %}[[body]]{%body%}{% body %}<%body%>', {delims: ['<<%', '%>>']});
+    actual.should.eql('INNER{%= body %}[[body]]{%body%}{% body %}<%body%>');
   });
 });

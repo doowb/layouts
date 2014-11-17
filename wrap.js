@@ -1,6 +1,8 @@
 'use strict';
 
 var isFalsey = require('falsey');
+var process = require('interpolate');
+var chalk = require('chalk');
 var _ = require('lodash');
 
 var layouts = {
@@ -45,16 +47,37 @@ var layouts = {
  */
 
 var wrap = module.exports = function wrap(str, name, layouts, options) {
+  var msg = chalk.yellow('[layouts] layout delimiters appear to be wrong.');
+
   options = options || {};
   var arr = createStack(name, layouts, options);
+  var orig = str;
   var len = arr.length;
   var layout;
   var i = 0;
 
   while (layout = layouts[arr[i++]]) {
-    var res = _.template(layout.content, {body: str}, options.settings);
+    var res = str;
+    try {
+      res = _.template(layout.content, {body: str}, options.settings);
+    } catch(err) {
+      if (options.debug) {
+        console.log(err);
+        console.log(msg);
+      }
+    }
     str = res;
   }
+
+  // if delimiters are wrong, the layout content might be returned
+  // without inserting the original string. This prevents that.
+  if (str.indexOf(orig) === -1) {
+    if (options.debug) {
+      console.log(msg);
+    }
+    return orig;
+  }
+
   return str;
 };
 

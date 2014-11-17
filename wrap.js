@@ -47,9 +47,8 @@ var layouts = {
  */
 
 var wrap = module.exports = function wrap(str, name, layouts, options) {
-  var msg = chalk.yellow('[layouts] layout delimiters appear to be wrong.');
-
   options = options || {};
+
   var arr = createStack(name, layouts, options);
   var orig = str;
   var len = arr.length;
@@ -61,9 +60,8 @@ var wrap = module.exports = function wrap(str, name, layouts, options) {
     try {
       res = _.template(layout.content, {body: str}, options.settings);
     } catch(err) {
-      if (options.debug) {
-        console.log(err);
-        console.log(msg);
+      if (options.debugLayouts) {
+        delimiterError(name, options);
       }
     }
     str = res;
@@ -71,15 +69,16 @@ var wrap = module.exports = function wrap(str, name, layouts, options) {
 
   // if delimiters are wrong, the layout content might be returned
   // without inserting the original string. This prevents that.
-  if (str.indexOf(orig) === -1) {
-    if (options.debug) {
-      console.log(msg);
-    }
-    return orig;
+  if (str.indexOf(orig) === -1 && options.debugLayouts) {
+    delimiterError(name, options);
   }
-
   return str;
 };
+
+function delimiterError(name, options) {
+  var msg = chalk.yellow('layout delimiter error for template: "' + name + '".');
+  return console.log(msg + '\n', options.settings);
+}
 
 function createStack(name, layouts, options) {
   var template = {};

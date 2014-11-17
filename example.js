@@ -2,11 +2,9 @@
 
 var path = require('path');
 var util = require('util');
-var Delims = require('delims');
-var delims = new Delims();
 var Options = require('option-cache');
 var slice = require('array-slice');
-var layout = require('./wrap');
+var layout = require('./index2');
 var _ = require('lodash');
 var extend = _.extend;
 
@@ -41,8 +39,11 @@ util.inherits(Engine, Options);
 Engine.prototype.defaultOptions = function () {
   this.option('delims', {
     content: ['<%', '%>'],
-    layouts: ['{%', '%}']
+    // layout: /\{%([\s\S]+?)%}/g,
+    // layout: '{%([\\s\\S]+?)%}',
+    layout: ['{%', '%}'],
   });
+
   this.disable('debug');
 };
 
@@ -61,7 +62,7 @@ Engine.prototype.debug = function () {
  */
 
 Engine.prototype.defaultTemplates = function () {
-  this.create('page', 'pages', { isRenderable: true });
+  this.create('page', 'pages', { isRenderable: true , delims: {layout: ['<%', '%>']}});
   this.create('partial', 'partials', { isPartial: true });
   this.create('layout', 'layouts', { isLayout: true });
 };
@@ -81,9 +82,10 @@ Engine.prototype.load = function (key, value, locals, options) {
   if (typeof value === 'string') {
     value = {content: value};
   }
+
   var o = value || {};
   o.locals = locals || {};
-  o.options = options || {};
+  o.options = _.extend({}, options);
   o.layout = o.layout || o.locals.layout || o.options.layout;
   return o;
 };
@@ -101,12 +103,14 @@ Engine.prototype.load = function (key, value, locals, options) {
  * @api public
  */
 
-Engine.prototype.applyLayout = function (name, collection, options) {
+Engine.prototype.applyLayout = function (name, collection) {
   var template = this.cache[collection][name];
   var name = template.layout || template.locals.layout;
-  var opts = extend({}, this.options, options);
-  var re = delims.templates(opts.delims && opts.delims.layouts);
-  opts.settings = _.extend({}, opts.settings, re);
+
+  // generate delimiters to use to layouts
+  var opts = extend({}, this.options, template.options);
+  opts.delims = opts.delims && opts.delims.layout;
+
   return layout(template.content, name, this.cache.layouts, opts);
 };
 
@@ -126,9 +130,6 @@ Engine.prototype.create = function (type, plural, options) {
   };
 
   Engine.prototype[plural] = function (key, value, locals, opt) {
-    var args = slice(arguments);
-    var opts = _.extend({}, options, args.pop());
-    console.log(opts)
     this.cache[plural][key] = this.load.apply(this, arguments);
     return this;
   };
@@ -139,21 +140,28 @@ Engine.prototype.create = function (type, plural, options) {
 var engine = new Engine();
 
 engine
-  .layout('default', '[default]<%= body %>[default]', {name: 'Brian Woodward'})
-  .layout('aaa', '[aaa]<%= body %>[aaa]', {layout: 'bbb'})
-  .layout('bbb', '[bbb]<%= body %>[bbb]', {layout: 'default'})
-  .layout('ccc', '[ccc]<%= body %>[ccc]')
-  .layout('ccc', '[ccc]<% body %>[ccc]')
+  .layout('default', '[default]{% body %}[default]', {name: 'Brian Woodward'})
+  .layout('aaa', '[aaa]{% body %}[aaa]', {layout: 'bbb'})
+  .layout('bbb', '[bbb]{% body %}[bbb]', {layout: 'ccc'})
+  .layout('ccc', '[ccc]{% body %}[ccc]', {layout: 'default'})
+  .layout('ddd', '[ddd]<% body %>[ddd]', {delims: {layout: ['<%', '%>']}})
   .layout('eee', '[eee]{% body %}[eee]')
 
-engine.partial('sidebar', 'This is a sidebar.', {layout: 'eee'}, {delims: {layouts: ['{%', '%}']}});
-// engine.page('home', {content: 'This is content'}, { engine: 'lodash' });
-// engine.page('about', {content: 'This is content'}, { engine: 'hbs' });
-// engine.page('contact', {content: 'This is content', layout: 'default'}, { engine: 'hbs' });
+engine.partial('sidebar1', 'This is sidebar 1.', {layout: 'ddd'});
+engine.partial('sidebar2', 'This is sidebar 2.', {layout: 'eee'});
+engine.page('home', {content: 'This is content', layout: 'aaa'}, { engine: 'lodash' });
+engine.page('about', {content: 'This is content', layout: 'ccc'}, { engine: 'hbs' });
+engine.page('contact', {content: 'This is content', layout: 'default'}, { engine: 'hbs' });
 
-var a = engine.applyLayout('sidebar', 'partials');
-// var b = engine.applyLayout('contact', 'pages');
-console.log(a)
-// console.log(b)
+
+Object.keys(engine.cache.partials).forEach(function(name) {
+  console.log(engine.applyLayout(name, 'partials'))
+});
+
+Object.keys(engine.cache.pages).forEach(function(name) {
+  console.log(engine.applyLayout(name, 'pages'))
+});
+
+
 // console.log(util.inspect(engine, null, 10));
 

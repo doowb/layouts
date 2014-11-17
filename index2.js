@@ -1,35 +1,9 @@
 'use strict';
 
 var isFalsey = require('falsey');
-var process = require('interpolate');
+var process = require('./lib/interpolate');
 var chalk = require('chalk');
 var _ = require('lodash');
-
-var layouts = {
-  'default': {
-    content: '[default]<%= body %>[default]',
-    locals: {title: 'Quux'}
-  },
-  aaa: {
-    content: '[aaa]<%= body %>[aaa]',
-    locals: {title: 'Foo'},
-    layout: 'bbb'
-  },
-  bbb: {
-    content: '[bbb]<%= body %>[bbb]',
-    locals: {title: 'Bar'},
-    layout: 'ccc'
-  },
-  ccc: {
-    content: '[ccc]<%= body %>[ccc]',
-    locals: {title: 'Baz'},
-    layout: 'default'
-  },
-  ddd: {
-    content: '[ddd]<%= body %>[ddd]',
-    locals: {title: 'Baz'}
-  }
-};
 
 /**
  * Given an object of `layouts`, and the `name` of a starting layout:
@@ -58,7 +32,16 @@ var wrap = module.exports = function wrap(str, name, layouts, options) {
   while (layout = layouts[arr[i++]]) {
     var res = str;
     try {
-      res = _.template(layout.content, {body: str}, options.settings);
+      // Check the options and locals of the actual layout to see if another
+      // layout is defined.
+      //
+      // TODO: this should not be here. Instead, we should expose an option
+      // to pass a "pick layout" function
+      var opts = _.extend({}, options, layout.locals, layout.options);
+      var delims = opts.delims.layout || opts.delims;
+
+      // actually render the layout
+      res = process(layout.content, {body: str}, delims);
     } catch(err) {
       if (options.debugLayouts) {
         delimiterError(name, options);
@@ -77,7 +60,12 @@ var wrap = module.exports = function wrap(str, name, layouts, options) {
 
 function delimiterError(name, options) {
   var msg = chalk.yellow('layout delimiter error for template: "' + name + '".');
-  return console.log(msg + '\n', options.settings);
+  return console.log(msg + '\n', options.regex);
+}
+
+function pickLayout(template, options) {
+  var opts = _.extend({}, options, template.locals, template.options);
+  return opts.delims.layout || opts.delims;
 }
 
 function createStack(name, layouts, options) {
@@ -102,6 +90,3 @@ function assertLayout(value, defaultLayout) {
     return value;
   }
 }
-
-// console.log(wrap('This is content.', 'aaa', layouts, {defaultLayout: undefined}));
-// console.log(wrap('This is content.', 'ddd', layouts, {defaultLayout: 'default'}));

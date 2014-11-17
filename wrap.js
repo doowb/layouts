@@ -66,8 +66,7 @@ function createStack(name, layouts, options) {
   while (name && (prev !== name) && (template = layouts[name])) {
     stack.unshift(name);
     prev = name;
-    var layout = template.layout || template.locals.layout;
-    name = assertLayout(layout, options.defaultLayout);
+    name = assertLayout(template.layout, options.defaultLayout);
   }
   return stack;
 }

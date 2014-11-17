@@ -3,7 +3,7 @@
 var path = require('path');
 var util = require('util');
 var slice = require('array-slice');
-var layouts = require('./wrap');
+var layout = require('./wrap');
 var _ = require('lodash');
 var extend = _.extend;
 
@@ -50,6 +50,7 @@ Engine.prototype.load = function (key, value, locals, options) {
     value = {content: value};
   }
   var template = value || {};
+  template.layout = template.layout || locals.layout;
   template.locals = locals || {};
   template.options = options || {};
   return template;
@@ -70,8 +71,8 @@ Engine.prototype.load = function (key, value, locals, options) {
 
 Engine.prototype.applyLayout = function (name, collection) {
   var template = this.cache[collection][name];
-  var layout = template.locals.layout;
-  return layouts(template.content, layout, this.cache.layouts);
+  var name = template.layout || template.locals.layout;
+  return layout(template.content, name, this.cache.layouts);
 };
 
 /**
@@ -106,7 +107,10 @@ engine
 engine.partial('aaa', 'This is content', {name: 'Brian Woodward', layout: 'aaa'});
 engine.page('aaa', {content: 'This is content'}, {name: 'Brian Woodward'}, { engine: 'lodash' });
 engine.page('bbb', {content: 'This is content'}, {name: 'Brian Woodward'}, { engine: 'hbs' });
+engine.page('ccc', {content: 'This is content', layout: 'default'}, {name: 'Brian Woodward'}, { engine: 'hbs' });
 
-var res = engine.applyLayout('aaa', 'partials');
-console.log(res)
+var a = engine.applyLayout('aaa', 'partials');
+var b = engine.applyLayout('ccc', 'pages');
+console.log(a)
+console.log(b)
 // console.log(util.inspect(engine, null, 10));

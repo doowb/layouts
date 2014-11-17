@@ -20,6 +20,29 @@
       "url": "https://github.com/jonschlinkert/layouts/blob/master/LICENSE-MIT"
     }
   ],
+  "main": "index.js",
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "scripts": {
+    "test": "mocha -R spec"
+  },
+  "devDependencies": {
+    "array-slice": "^0.2.2",
+    "globby": "^0.1.1",
+    "gray-matter": "^0.5.1",
+    "mocha": "*",
+    "should": "^4.0.4"
+  },
+  "dependencies": {
+    "debug": "^2.0.0",
+    "delims": "^0.4.0",
+    "falsey": "^0.1.0",
+    "kind-of": "^0.1.0",
+    "load-templates": "^0.4.2",
+    "lodash": "^2.4.1",
+    "option-cache": "^0.1.1"
+  },
   "keywords": [
     "atpl",
     "consolidate",
@@ -63,29 +86,5 @@
     "walrus",
     "whiskers",
     "wrap"
-  ],
-  "main": "index.js",
-  "engines": {
-    "node": ">=0.10.0"
-  },
-  "scripts": {
-    "test": "mocha -R spec"
-  },
-  "devDependencies": {
-    "globby": "^0.1.1",
-    "gray-matter": "^0.5.1",
-    "mocha": "*",
-    "should": "^4.0.4",
-    "verb": ">= 0.2.6",
-    "verb-tag-jscomments": "^0.2.2"
-  },
-  "dependencies": {
-    "debug": "^2.0.0",
-    "delims": "^0.4.0",
-    "falsey": "^0.1.0",
-    "kind-of": "^0.1.0",
-    "load-templates": "^0.4.2",
-    "lodash": "^2.4.1",
-    "option-cache": "^0.1.1"
-  }
+  ]
 }

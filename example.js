@@ -1,6 +1,6 @@
 'use strict';
 
-require('require-progress');
+// require('require-progress');
 
 var path = require('path');
 var util = require('util');

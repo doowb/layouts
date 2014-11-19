@@ -8,7 +8,7 @@
 'use strict';
 
 var should = require('should');
-var layouts = require('../engine');
+var layouts = require('..');
 
 
 describe('layout delimiters', function () {

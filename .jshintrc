@@ -11,12 +11,5 @@
   "node": true,
   "sub": true,
   "undef": true,
-  "unused": true,
-  "globals": {
-    "define": true,
-    "before": true,
-    "after": true,
-    "describe": true,
-    "it": true
-  }
+  "mocha": true
 }

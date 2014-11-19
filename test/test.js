@@ -39,8 +39,8 @@ describe('.layouts():', function () {
   };
 
   it('should apply a layout to the given string.', function () {
-    var obj = {blah: {content: 'blah above\n{% body %}\nblah below'}};
-    layouts('This is content', 'blah', obj).should.eql([
+    var obj = {abc: {content: 'blah above\n{% body %}\nblah below'}};
+    layouts('This is content', 'abc', obj).should.eql([
       'blah above',
       'This is content',
       'blah below'
@@ -48,8 +48,8 @@ describe('.layouts():', function () {
   });
 
   it('should apply multiple layouts to the given string.', function () {
-    var obj = {blah: {content: 'blah above\n{% body %}\n{% body %}\nblah below'}};
-    layouts('This is content', 'blah', obj).should.eql([
+    var obj = {abc: {content: 'blah above\n{% body %}\n{% body %}\nblah below'}};
+    layouts('This is content', 'abc', obj).should.eql([
       'blah above',
       'This is content',
       'This is content',

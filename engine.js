@@ -5,7 +5,7 @@ require('require-progress');
 var createStack = require('layout-stack');
 var typeOf = require('kind-of');
 var _ = require('lodash');
-var process = require('./lib/tokens');
+var process = require('./lib/interpolate');
 
 /**
  * @name layouts
@@ -19,33 +19,36 @@ var process = require('./lib/tokens');
  * @api public
  */
 
-module.exports = function wrapLayout(content, name, layouts, options) {
+module.exports = function wrapLayout(str, name, layouts, options) {
   options = options || {};
 
   var arr = createStack(name, layouts, options);
-  var orig = content;
+  var orig = str;
   var len = arr.length - 1;
   var layout;
   var i = 0;
 
+
   while (layout = layouts[arr[len--]]) {
-    var res = content;
+    var res = str;
     try {
-      res = process(layout.content, content, options);
+      var tag = {}, body = options.tag || 'body';
+      tag[body] = str;
+      res = process(layout.content, tag, options.delims);
     } catch(err) {
       if (options.debugLayouts) {
         delimiterError(name, options);
       }
     }
-    content = res;
+    str = res;
   }
 
   // if delimiters are wrong, the layout content might be returned
   // without inserting the original string. This prevents that.
-  if (content.indexOf(orig) === -1 && options.debugLayouts) {
+  if (str.indexOf(orig) === -1 && options.debugLayouts) {
     delimiterError(name, options);
   }
-  return content;
+  return str;
 };
 
 /**

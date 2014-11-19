@@ -52,7 +52,7 @@ Engine.prototype.defaultOptions = function () {
 };
 
 /**
- * Add some default template "types"
+ * Default debugging settings
  */
 
 Engine.prototype.debug = function () {
@@ -93,7 +93,6 @@ Engine.prototype.load = function (key, value, locals, options) {
   o.layout = o.layout || o.locals.layout || o.options.layout;
   return o;
 };
-
 
 /**
  * Given an object of `layouts`, and the `name` of a starting layout,

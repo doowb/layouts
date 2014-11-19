@@ -1,10 +1,9 @@
 'use strict';
 
-// require('require-progress');
+require('require-progress');
 
 var createStack = require('layout-stack');
 var typeOf = require('kind-of');
-var chalk = require('chalk');
 var _ = require('lodash');
 var process = require('./lib/interpolate');
 
@@ -82,6 +81,7 @@ function pickDelims(template, options) {
  */
 
 function delimiterError(name, opts) {
+  var chalk = require('chalk');
   var msg = chalk.yellow('layout delimiter error for template: "' + name + '".');
   return console.log(msg + '\n', opts.regex);
 }

@@ -19,55 +19,34 @@ var process = require('./lib/interpolate');
  * @api public
  */
 
-module.exports = function wrapLayout(str, name, layouts, options) {
+module.exports = function wrapLayout(content, name, layouts, options) {
   options = options || {};
 
   var arr = createStack(name, layouts, options);
-  var orig = str;
+  var orig = content;
   var len = arr.length - 1;
   var layout;
   var i = 0;
 
   while (layout = layouts[arr[len--]]) {
-    var res = str;
+    var res = content;
     try {
-      var delims = pickDelims(layout, options);
-      res = process(layout.content, {body: str}, delims);
+      res = process(layout.content, content, options);
     } catch(err) {
       if (options.debugLayouts) {
         delimiterError(name, options);
       }
     }
-    str = res;
+    content = res;
   }
 
   // if delimiters are wrong, the layout content might be returned
   // without inserting the original string. This prevents that.
-  if (str.indexOf(orig) === -1 && options.debugLayouts) {
+  if (content.indexOf(orig) === -1 && options.debugLayouts) {
     delimiterError(name, options);
   }
-  return str;
+  return content;
 };
-
-/**
- * Check the options and locals of the actual layout
- * to see if another layout is defined.
- *
- * @param {Object} template
- * @param {Object} options
- * @return {*} The value of the `delims` property, or `null`
- * @api private
- */
-
-function pickDelims(template, options) {
-  var opts = _.extend({}, options, template.locals, template.options);
-
-  if (typeof opts.pickDelims === 'function') {
-    return opts.pickDelims(template, options);
-  }
-
-  return (opts.delims && opts.delims.layout) || opts.delims || null;
-}
 
 /**
  * Show a message in the console if it appears that there

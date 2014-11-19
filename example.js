@@ -161,7 +161,6 @@ engine.page('home', {content: 'This is content', layout: 'aaa'}, { engine: 'loda
 engine.page('about', {content: 'This is content', layout: 'ccc'}, { engine: 'hbs' });
 engine.page('contact', {content: 'This is content', layout: 'default'}, { engine: 'hbs' });
 
-
 // console.log(engine.applyLayout('home', 'pages'))
 // console.log(engine.applyLayout('aaa', 'layouts'))
 

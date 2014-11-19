@@ -1,8 +1,8 @@
 'use strict';
 
-require('require-progress');
+// require('require-progress');
 
-var isFalsey = require('falsey');
+var createStack = require('layout-stack');
 var typeOf = require('kind-of');
 var chalk = require('chalk');
 var _ = require('lodash');
@@ -68,48 +68,6 @@ function pickDelims(template, options) {
   }
 
   return (opts.delims && opts.delims.layout) || opts.delims || null;
-}
-
-/**
- * Build a layout stack.
- *
- * @param  {String} `name` The name of the first layout to add to the stack.
- * @param  {Object} `options` Options to pass to `assertLayout`.
- * @return {Array}
- * @api private
- */
-
-function createStack(name, layouts, opts) {
-  var template = {};
-  var stack = [];
-  var prev = null;
-
-  while (name && (prev !== name) && (template = layouts[name])) {
-    stack.unshift(name);
-    prev = name;
-    name = assertLayout(template.layout, opts.defaultLayout);
-  }
-  return stack;
-}
-
-/**
- * Assert whether or not a layout should be used based on
- * the given `value`. If a layout should be used, the name of the
- * layout is returned, if not `null` is returned.
- *
- * @param  {*} `value`
- * @return {String|Null} Returns `true` or `null`.
- * @api private
- */
-
-function assertLayout(value, defaultLayout) {
-  if (value === false || (value && isFalsey(value))) {
-    return null;
-  } else if (!value || value === true) {
-    return defaultLayout || null;
-  } else {
-    return value;
-  }
 }
 
 /**

@@ -9,7 +9,7 @@ var process = require('./lib/interpolate');
  * @param {String} `name` The name of the layout to use.
  * @param {Object} `layout{s}` Object of layouts. `name` should be a key on this object.
  * @param {Object} `options`
- *     @option {Object} [options] `delims` Custom delimiters to use.
+ *     @option {Object} [options] `layoutDelims` Custom delimiters to use.
  *     @option {Object} [options] `defaultLayout` Default layout to use.
  * @return {String} Returns the original string, wrapped with a layout, or layout stack.
  * @api public
@@ -28,7 +28,7 @@ module.exports = function wrapLayout(str, name, layouts, options) {
     try {
       var tag = {}, body = options.tag || 'body';
       tag[body] = str;
-      res = process(layout.content, tag, options.delims);
+      res = process(layout.content, tag, options.layoutDelims);
     } catch(err) {
       if (options.debugLayouts) {
         delimiterError(name, options);

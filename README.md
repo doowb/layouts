@@ -1,4 +1,4 @@
-# layouts [![NPM version](https://badge.fury.io/js/layouts.svg)](http://badge.fury.io/js/layouts)
+# layouts [![NPM version](https://badge.fury.io/js/layouts.svg)](http://badge.fury.io/js/layouts)  [![Build Status](https://travis-ci.org/doowb/layouts.svg)](https://travis-ci.org/doowb/layouts) 
 
 > Wrap templates with layouts. Layouts can be nested and optionally use other layouts.
 

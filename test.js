@@ -1,8 +1,8 @@
 /*!
- * layouts <https://github.com/jonschlinkert/layouts>
+ * layouts <https://github.com/doowb/layouts>
  *
- * Copyright (c) 2014 Jon Schlinkert, contributors
- * Licensed under the MIT License (MIT)
+ * Copyright (c) 2014-2015, Brian Woodward.
+ * Licensed under the MIT License.
  */
 
 'use strict';

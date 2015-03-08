@@ -31,11 +31,9 @@ function layouts(str, key, templates, opts, fn) {
 
   opts = opts || {};
   var template = {};
-  var stack = [];
   var prev = null;
 
   while (key && (prev !== key) && (template = templates[key])) {
-    stack.unshift(key);
     var delims = opts.layoutDelims;
     var context = {};
     context[opts.tag || 'body'] = str;

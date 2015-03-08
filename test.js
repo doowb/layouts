@@ -15,32 +15,37 @@ describe('.layouts():', function () {
   var stack = {
     'default': {
       content: 'default above\n{% body %}\ndefault below',
-      locals: {title: 'Quux'}
+      data: {scripts: ['main.js']},
+      locals: {title: 'Quux'},
     },
     aaa: {
       content: 'aaa above\n{% body %}\naaa below',
+      data: {scripts: ['aaa.js']},
       locals: {title: 'Foo'},
       layout: 'bbb'
     },
     bbb: {
       content: 'bbb above\n{% body %}\nbbb below',
+      data: {scripts: ['bbb.js']},
       locals: {title: 'Bar'},
       layout: 'ccc'
     },
     ccc: {
       content: 'ccc above\n{% body %}\nccc below',
+      data: {scripts: ['ccc.js']},
       locals: {title: 'Baz'},
       layout: 'default'
     },
     ddd: {
       content: 'ddd above\n{% body %}\nddd below',
+      data: {scripts: ['ddd.js']},
       locals: {title: 'Baz'}
     }
   };
 
   it('should apply a layout to the given string.', function () {
     var obj = {abc: {content: 'blah above\n{% body %}\nblah below'}};
-    layouts('This is content', 'abc', obj).should.eql([
+    layouts('This is content', 'abc', obj).result.should.eql([
       'blah above',
       'This is content',
       'blah below'
@@ -49,7 +54,7 @@ describe('.layouts():', function () {
 
   it('should apply multiple layouts to the given string.', function () {
     var obj = {abc: {content: 'blah above\n{% body %}\n{% body %}\nblah below'}};
-    layouts('This is content', 'abc', obj).should.eql([
+    layouts('This is content', 'abc', obj).result.should.eql([
       'blah above',
       'This is content',
       'This is content',
@@ -58,7 +63,7 @@ describe('.layouts():', function () {
   });
 
   it('should replace the `{%= body %}` tag in a layout with the given content.', function () {
-    layouts('This is content', 'aaa', stack).should.eql([
+    layouts('This is content', 'aaa', stack).result.should.eql([
       'default above',
       'ccc above',
       'bbb above',
@@ -72,7 +77,7 @@ describe('.layouts():', function () {
   });
 
   it('should not replace the `{%= body %}` tag when no content is given to replace it.', function () {
-    layouts(stack.aaa.content, 'bbb', stack).should.eql([
+    layouts(stack.aaa.content, 'bbb', stack).result.should.eql([
       'default above',
       'ccc above',
       'bbb above',
@@ -109,7 +114,7 @@ describe('.layouts():', function () {
     };
 
     it('should use a custom tag', function () {
-      layouts(stack2.aaa.content, 'bbb', stack2, {tag: 'foo'}).should.eql([
+      layouts(stack2.aaa.content, 'bbb', stack2, {tag: 'foo'}).result.should.eql([
         'default above',
         'ccc above',
         'bbb above',
@@ -123,7 +128,7 @@ describe('.layouts():', function () {
     });
 
     it('should use custom delimiters', function () {
-      layouts(stack3.aaa.content, 'bbb', stack3, {layoutDelims: ['{{', '}}']}).should.eql([
+      layouts(stack3.aaa.content, 'bbb', stack3, {layoutDelims: ['{{', '}}']}).result.should.eql([
         'default above',
         'ccc above',
         'bbb above',
@@ -137,7 +142,7 @@ describe('.layouts():', function () {
     });
 
     it('should use custom delimiters and tag', function () {
-      layouts(stack4.aaa.content, 'bbb', stack4, {tag: 'foo', layoutDelims: ['{{', '}}']}).should.eql([
+      layouts(stack4.aaa.content, 'bbb', stack4, {tag: 'foo', layoutDelims: ['{{', '}}']}).result.should.eql([
         'default above',
         'ccc above',
         'bbb above',
@@ -182,7 +187,7 @@ describe('layout delimiters', function () {
 
   it('should apply a layout to the given string.', function () {
     var obj = {blah: {content: 'blah above\n{% body %}\nblah below'}};
-    layouts('This is content', 'blah', obj).should.eql([
+    layouts('This is content', 'blah', obj).result.should.eql([
       'blah above',
       'This is content',
       'blah below'
@@ -216,11 +221,11 @@ describe('layout delimiters', function () {
 
   it('should use default delimiters', function () {
     var obj = {abc: {content: '{%= body %}[[body]]{%body%}{% body %}<%body%>'}};
-    layouts('INNER', 'abc', obj).should.eql('{%= body %}[[body]]{%body%}INNER<%body%>');
+    layouts('INNER', 'abc', obj).result.should.eql('{%= body %}[[body]]{%body%}INNER<%body%>');
   });
 
   it('should use custom delimiters', function () {
     var obj = {abc: {content: '{%= body %}[[body]]{%body%}{% body %}<%body%>'}};
-    layouts('INNER', 'abc', obj, {layoutDelims: ['<%', '%>']}).should.eql('{%= body %}[[body]]{%body%}{% body %}INNER');
+    layouts('INNER', 'abc', obj, {layoutDelims: ['<%', '%>']}).result.should.eql('{%= body %}[[body]]{%body%}{% body %}INNER');
   });
 });

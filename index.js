@@ -11,9 +11,8 @@ var get = require('get-value');
 module.exports = layouts;
 
 /**
- * Wrap a string with a layout, or multiple layouts.
+ * Wrap a string one or more layouts.
  *
- * @name layouts
  * @param {String} `str` The content string to be wrapped with a layout.
  * @param {String} `key` The object key of the starting layout.
  * @param {Object} `templates` Object of layouts.
@@ -31,23 +30,43 @@ function layouts(str, key, templates, opts, fn) {
 
   opts = opts || {};
   var template = {};
-  var prev = null;
+  var prev, i = 0;
+  var res = {};
+  res.stack = [];
 
   while (key && (prev !== key) && (template = templates[key])) {
     var delims = opts.layoutDelims;
+
+    // `context` is passed to `interpolate` to resolve templates
+    // to the values on the context object.
     var context = {};
     context[opts.tag || 'body'] = str;
+
+    // `current` takes a snapshot (reference) of the context
+    // and pushes it onto the `res`ults array.
+    var current = {};
+    current.layout = template;
+    current.layout.key = key;
+    current.before = str;
+    current.depth = i++;
+
     str = interpolate(template.content, context, delims);
+    current.after = str;
     prev = key;
     key = assertLayout(template.layout, opts.defaultLayout);
+    res.stack.push(current);
   }
-  return str;
-}
+  res.options = opts;
+  res.result = str;
+  return res;
+};
 
 /**
  * Assert whether or not a layout should be used based on
- * the given `value`. If a layout should be used, the name of the
- * layout is returned, if not `null` is returned.
+ * the given `value`.
+ *
+ *   - If a layout should be used, the name of the layout is returned.
+ *   - If not, `null` is returned.
  *
  * @param  {*} `value`
  * @return {String|Null} Returns `true` or `null`.

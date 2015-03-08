@@ -1,64 +1,121 @@
 'use strict';
 
-var createStack = require('layout-stack');
-var process = require('./lib/interpolate');
+var isFalsey = require('falsey');
+var delims = require('delimiter-regex');
+var get = require('get-value');
 
 /**
+ * Expose `layouts`
+ */
+
+module.exports = layouts;
+
+/**
+ * Wrap a string with a layout, or multiple layouts.
+ *
  * @name layouts
- * @param {String} `str` The content string that should be wrapped with a layout.
- * @param {String} `name` The name of the layout to use.
- * @param {Object} `layout{s}` Object of layouts. `name` should be a key on this object.
+ * @param {String} `str` The content string to be wrapped with a layout.
+ * @param {String} `key` The object key of the starting layout.
+ * @param {Object} `templates` Object of layouts.
  * @param {Object} `options`
  *     @option {Object} [options] `layoutDelims` Custom delimiters to use.
- *     @option {Object} [options] `defaultLayout` Default layout to use.
- * @return {String} Returns the original string, wrapped with a layout, or layout stack.
+ *     @option {Object} [options] `defaultLayout` The name (key) of the default layout to use.
+ * @return {String} String wrapped with a layout or layouts.
  * @api public
  */
 
-module.exports = function wrapLayout(str, name, layouts, options) {
-  options = options || {};
-
-  var arr = createStack(name, layouts, options);
-  var orig = str;
-  var len = arr.length - 1;
-  var layout;
-
-  while (layout = layouts[arr[len--]]) {
-    var res = str;
-    try {
-      var tag = {}, body = options.tag || 'body';
-      tag[body] = str;
-      res = process(layout.content, tag, options.layoutDelims);
-    } catch(err) {
-      if (options.debugLayouts) {
-        delimiterError(name, options);
-      }
-    }
-    str = res;
+function layouts(str, key, templates, opts, fn) {
+  if (typeof str !== 'string') {
+    throw new TypeError('layouts expects a string');
   }
 
-  // if delimiters are wrong, the layout content might be returned
-  // without inserting the original string. This prevents that.
-  if (str.indexOf(orig) === -1 && options.debugLayouts) {
-    delimiterError(name, options);
-    return str;
+  opts = opts || {};
+  var template = {};
+  var stack = [];
+  var prev = null;
+
+  while (key && (prev !== key) && (template = templates[key])) {
+    stack.unshift(key);
+    var delims = opts.layoutDelims;
+    var context = {};
+    context[opts.tag || 'body'] = str;
+    str = interpolate(template.content, context, delims);
+    prev = key;
+    key = assertLayout(template.layout, opts.defaultLayout);
   }
   return str;
-};
+}
 
 /**
- * Show a message in the console if it appears that there
- * is a delimiter mismatch. Since we don't know all use cases,
- * we can't assume this to be 100% reliable so for now
- * no errors will be thrown.
+ * Assert whether or not a layout should be used based on
+ * the given `value`. If a layout should be used, the name of the
+ * layout is returned, if not `null` is returned.
  *
- * @param {String} `name` The name of the template
- * @param {String} `opts`
+ * @param  {*} `value`
+ * @return {String|Null} Returns `true` or `null`.
  * @api private
  */
 
-function delimiterError(name, opts) {
-  var chalk = require('chalk');
-  var msg = chalk.yellow('layout delimiter error for template: "' + name + '".');
-  return console.log(msg + '\n', opts.regex);
+function assertLayout(value, defaultLayout) {
+  if (value === false || (value && isFalsey(value))) {
+    return null;
+  } else if (!value || value === true) {
+    return defaultLayout || null;
+  } else {
+    return value;
+  }
+}
+
+/**
+ * Cache compiled regexps to prevent runtime
+ * compilation for the same delimiter strings
+ * multiple times (this trick can be used for
+ * any compiled regex)
+ */
+
+var cache = {};
+
+/**
+ * Resolve template strings to the values on the given
+ * `context` object.
+ */
+
+function interpolate(content, context, syntax) {
+  var re = cache[syntax] || (cache[syntax] = makeDelimiterRegex(syntax));
+  return toString(content).replace(re, function(_, $1) {
+    if ($1.indexOf('.') !== -1) {
+      return toString(get(context, $1.trim()));
+    }
+    return context[$1.trim()];
+  });
+}
+
+/**
+ * Make delimiter regex.
+ *
+ * @param  {Sring|Array|RegExp} `syntax`
+ * @return {RegExp}
+ */
+
+function makeDelimiterRegex(syntax) {
+  if (typeof syntax === 'undefined') {
+    return /\{% ([^{}]+?) %}/g;
+  }
+  if (syntax instanceof RegExp) {
+    return syntax;
+  }
+  if (typeof syntax === 'string') {
+    return new RegExp(syntax, 'g');
+  }
+  if (Array.isArray(syntax)) {
+    return delims(syntax);
+  }
+}
+
+/**
+ * Cast `val` to a string.
+ */
+
+function toString(val){
+  return val == null ? '' : val.toString();
 }

@@ -28,9 +28,13 @@ function layouts(str, key, templates, opts, fn) {
     throw new TypeError('layouts expects a string');
   }
 
+  if (typeof opts === 'function') {
+    fn = opts; opts = {};
+  }
+
   opts = opts || {};
   var template = {}, prev, i = 0;
-  var res = {stack: []};
+  var res = {options: {}, stack: []};
 
   while (key && (prev !== key) && (template = templates[key])) {
     var delims = opts.layoutDelims;
@@ -49,8 +53,12 @@ function layouts(str, key, templates, opts, fn) {
 
     str = interpolate(template.content, context, delims);
     obj.after = str;
-    res.stack.push(obj);
 
+    if (typeof fn === 'function') {
+      fn(obj, res, i);
+    }
+
+    res.stack.push(obj);
     prev = key;
     key = assertLayout(template.layout, opts.defaultLayout);
   }

@@ -10,6 +10,7 @@
 var should = require('should');
 var layouts = require('./');
 
+/* deps:mocha */
 describe('.layouts():', function () {
 
   var stack = {

@@ -29,10 +29,8 @@ function layouts(str, key, templates, opts, fn) {
   }
 
   opts = opts || {};
-  var template = {};
-  var prev, i = 0;
-  var res = {};
-  res.stack = [];
+  var template = {}, prev, i = 0;
+  var res = {stack: []};
 
   while (key && (prev !== key) && (template = templates[key])) {
     var delims = opts.layoutDelims;
@@ -42,20 +40,21 @@ function layouts(str, key, templates, opts, fn) {
     var context = {};
     context[opts.tag || 'body'] = str;
 
-    // `current` takes a snapshot (reference) of the context
-    // and pushes it onto the `res`ults array.
-    var current = {};
-    current.layout = template;
-    current.layout.key = key;
-    current.before = str;
-    current.depth = i++;
+    // get the context for the layout and push it onto `stack`
+    var obj = {};
+    obj.layout = template;
+    obj.layout.key = key;
+    obj.before = str;
+    obj.depth = i++;
 
     str = interpolate(template.content, context, delims);
-    current.after = str;
+    obj.after = str;
+    res.stack.push(obj);
+
     prev = key;
     key = assertLayout(template.layout, opts.defaultLayout);
-    res.stack.push(current);
   }
+
   res.options = opts;
   res.result = str;
   return res;

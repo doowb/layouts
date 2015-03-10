@@ -247,7 +247,6 @@ describe('.layouts():', function () {
       var actual = layouts('This is content', 'aaa', stack, function (ele, res) {
         res.scripts = _.union([], res.scripts, ele.layout.data.scripts || []);
       });
-      console.log(util.inspect(actual, null, 10))
     });
   });
 });

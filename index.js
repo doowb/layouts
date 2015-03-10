@@ -105,7 +105,10 @@ var cache = {};
  */
 
 function interpolate(content, context, syntax) {
+  syntax = syntax || /\{% ([^{}]+?) %}/g;
+  var key = syntax instanceof RegExp ? syntax.source : syntax.toString();
   var re = cache[syntax] || (cache[syntax] = makeDelimiterRegex(syntax));
+
   return toString(content).replace(re, function(_, $1) {
     if ($1.indexOf('.') !== -1) {
       return toString(get(context, $1.trim()));
@@ -122,9 +125,6 @@ function interpolate(content, context, syntax) {
  */
 
 function makeDelimiterRegex(syntax) {
-  if (typeof syntax === 'undefined') {
-    return /\{% ([^{}]+?) %}/g;
-  }
   if (syntax instanceof RegExp) {
     return syntax;
   }

@@ -10,8 +10,17 @@
 /* deps:mocha */
 var util = require('util');
 var should = require('should');
+var toVinyl = require('to-vinyl');
 var layouts = require('./');
 var _ = require('lodash');
+
+describe('errors:', function () {
+  it('should throw an error when invalid arguments are passed:', function () {
+    (function () {
+      layouts();
+    }).should.throw('layouts expects a string.');
+  });
+});
 
 describe('.layouts():', function () {
   var stack = {
@@ -94,7 +103,7 @@ describe('.layouts():', function () {
     });
   });
 
-  describe('custom tokens', function () {
+  describe('custom placeholders', function () {
     var stack2 = {
       'default': {content: 'default above\n{% foo %}\ndefault below', locals: {title: 'Quux'}},
       aaa: {content: 'aaa above\n{% foo %}\naaa below', locals: {title: 'Foo'}, layout: 'bbb'},
@@ -235,11 +244,11 @@ describe('.layouts():', function () {
       }
     };
 
-    it('should return an object with the layout stack.', function () {
+    it('should return an object with the layout history.', function () {
       var obj = {blah: {content: 'blah above\n{% body %}\nblah below'}};
       var actual = layouts('This is content', 'blah', obj);
-      actual.should.have.properties(['stack', 'options', 'result']);
-      actual.stack.should.be.an.array;
+      actual.should.have.properties(['history', 'options', 'result']);
+      actual.history.should.be.an.array;
     });
 
     it('should push all layouts onto the stack:', function () {
@@ -248,5 +257,82 @@ describe('.layouts():', function () {
         res.scripts = _.union([], res.scripts, ele.layout.data.scripts || []);
       });
     });
+  });
+});
+
+
+describe('buffers:', function () {
+  it('should support buffers.', function () {
+    var obj = {
+      abc: {content: new Buffer('blah above\n{% body %}\nblah below')}
+    };
+
+    var buffer = new Buffer('This is content');
+    var actual = layouts(buffer, 'abc', obj);
+
+    actual.result.should.eql([
+      'blah above',
+      'This is content',
+      'blah below'
+    ].join('\n'));
+  });
+});
+
+describe('gulp / vinyl:', function () {
+  var stack = {
+    'default': {
+      path: 'default.html',
+      content: 'default above\n{% body %}\ndefault below',
+      locals: {title: 'Quux'},
+    },
+    aaa: {
+      path: 'aaa.html',
+      content: 'aaa above\n{% body %}\naaa below',
+      locals: {title: 'Foo'},
+      layout: 'bbb'
+    },
+    bbb: {
+      path: 'bbb.html',
+      content: 'bbb above\n{% body %}\nbbb below',
+      locals: {title: 'Bar'},
+      layout: 'ccc'
+    },
+    ccc: {
+      path: 'ccc.html',
+      content: 'ccc above\n{% body %}\nccc below',
+      locals: {title: 'Baz'},
+      layout: 'default'
+    },
+    ddd: {
+      path: 'ddd.html',
+      content: 'ddd above\n{% body %}\nddd below',
+      locals: {title: 'Baz'}
+    }
+  };
+
+  function vinylize(stack) {
+    var keys = Object.keys(stack);
+    var len = keys.length;
+    var res = {};
+
+    while (len--) {
+      var key = keys[len];
+      res[key] = toVinyl(stack[key]);
+    }
+    return res;
+  }
+
+  it('should replace the `{%= body %}` tag with content.', function () {
+    layouts('This is content', 'aaa', vinylize(stack)).result.should.eql([
+      'default above',
+      'ccc above',
+      'bbb above',
+      'aaa above',
+      'This is content',
+      'aaa below',
+      'bbb below',
+      'ccc below',
+      'default below'
+    ].join('\n'));
   });
 });

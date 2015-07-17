@@ -75,7 +75,7 @@ function renderLayouts(str, name, layoutStack, opts, fn) {
     obj.depth = depth++;
 
     // inject the string into the layout
-    str = wrapLayout(layout.content, data, delims);
+    str = wrapLayout(layout.contents || layout.content, data, delims);
     obj.after = str;
 
     // if a (sync) callback is passed, allow it modify

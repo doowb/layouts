@@ -1,87 +1,172 @@
-# layouts [![NPM version](https://badge.fury.io/js/layouts.svg)](http://badge.fury.io/js/layouts)  [![Build Status](https://travis-ci.org/doowb/layouts.svg)](https://travis-ci.org/doowb/layouts) 
+# layouts [![NPM version](https://badge.fury.io/js/layouts.svg)](http://badge.fury.io/js/layouts)  [![Build Status](https://travis-ci.org/doowb/layouts.svg)](https://travis-ci.org/doowb/layouts)
 
-> Wrap templates with layouts. Layouts can be nested and optionally use other layouts.
+> Wraps templates with layouts. Layouts can use other layouts and be nested to any depth. This can be used 100% standalone to wrap any kind of file with banners, headers or footer content. Use for markdown, HTML, handlebars views, lo-dash templates, etc. Layouts can also be vinyl files.
 
-## Install with [npm](npmjs.org)
+## Install
 
-```bash
-npm i layouts --save
+Install with [npm](https://www.npmjs.com/)
+
+```sh
+$ npm i layouts --save
 ```
 
 ## Usage
 
 ```js
-var layouts = require('layouts');
+var renderLayouts = require('layouts');
 ```
 
-## Usage
+## Examples
+
+**Basic example**
+
+In this example, two layouts are used:
+
+* the first layout, `one`, will wrap the string
+* the second layout, `two`, will wrap the first layout
 
 ```js
-var stack = {
-  foo: {content: 'foo above\n{% body %}\nfoo below', layout: 'bar'},
-  bar: {content: 'bar above\n{% body %}\nbar below', layout: 'baz'},
-  baz: {content: 'baz above\n{% body %}\nbaz below'},
+var layouts = {
+  one: {content: 'one before\n{% body %}\none after', layout: 'two'},
+  two: {content: 'two before\n{% body %}\ntwo after'},
 };
 
-layouts('<div>This is content</div>', 'foo', stack);
+// `one` is the name of the first layout to use on the provided string
+renderLayouts('<div>Wrap me with a layout!!!</div>', 'one', layouts);
 ```
 
 Results in:
 
 ```html
-baz above
-bar above
-foo above
-<div>This is content</div>
-foo below
-bar below
-baz below
+two before
+one before
+<div>Wrap me with a layout!!!</div>
+one after
+two after
 ```
+
+**HTML**
+
+This example shows how to use nested HTML layouts to wrap content:
+
+```js
+var layouts = {};
+
+layouts.base = {
+  content: [
+    '<!DOCTYPE html>',
+    '<html lang="en">',
+    '  <head>',
+    '    <meta charset="UTF-8">',
+    '    <title>Home</title>',
+    '  </head>',
+    '  <body>',
+    '    {% body %}',
+    '  </body>',
+    '</html>',
+  ].join('\n')
+};
+
+// this `nav` layout will be wrapped with the `base` layout
+layouts.nav = {
+  layout: 'base',
+  content: '<nav>\n{% body %}\n</nav>'
+};
+
+// this string will be wrapped with the `nav` layout
+var str = [
+  '<ul class="categories">',
+  '  <li class="active"> <a href="#"> Development </a> </li>',
+  '  <li> <a href="#"> Design </a> </li>',
+  '  <li> <a href="#"> Node.js </a> </li>',
+  '</ul>'
+].join('\n')
+
+// `nav` is the name of the layout to use
+renderLayouts(str, nav, layouts);
+```
+
+Results in something like:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+  </head>
+  <body>
+    <nav>
+      <ul class="categories">
+        <li class="active"> <a href="#"> Development </a> </li>
+        <li> <a href="#"> Design </a> </li>
+        <li> <a href="#"> Node.js </a> </li>
+      </ul>
+    </nav>
+  </body>
+</html>
+```
+
+## Customization
+
+By default, `{% body %}` is used as the placeholder (insertion point) for content, but this can easily be customized with the following options:
+
+* `layoutDelims`: the delimiters to use. This can be a regex, like `/\{{([^}]+)\}}/`, or an array of delimiter strings, like `['{{', '}}']`
+* `tag`: the name of the placeholder tag.
 
 ## API
-### [layouts](./index.js#L26)
 
-* `str` **{String}**: The content string to be wrapped with a layout.    
-* `key` **{String}**: The object key of the starting layout.    
-* `templates` **{Object}**: Object of layouts.    
-* `options` **{Object}**  
-    - `layoutDelims` **{Object}**: Custom delimiters to use.
-    - `defaultLayout` **{Object}**: The name (key) of the default layout to use.
-      
-* `returns` **{String}**: String wrapped with a layout or layouts.  
+### [renderLayouts](index.js#L39)
 
-Wrap a string one or more layouts.
+Wrap one or more layouts around `string`.
 
-## Related
-* [template](https://github.com/jonschlinkert/template): Render templates from any engine. Make custom template types, use layouts on pages, partials or any custom template type, custom delimiters, helpers, middleware, routes, loaders, and lots more. Powers Assemble v0.6.0, Verb v0.3.0 and your application.
-* [assemble](http://assemble.io): Static site generator for Grunt.js, Yeoman and Node.js. Used by Zurb Foundation, Zurb Ink, H5BP/Effeckt, Less.js / lesscss.org, Topcoat, Web Experience Toolkit, and hundreds of other projects to build sites, themes, components, documentation, blogs and gh
-* [verb](https://github.com/assemble/verb): Verb makes it dead simple to generate markdown documentation, using simple templates, with zero configuration required. A project without documentation is like a project that doesn't exist.
-* [handlebars-helpers](https://github.com/assemble/handlebars-helpers): 120+ Handlebars helpers in ~20 categories, for Assemble, YUI, Ghost or any Handlebars project. Includes helpers like {{i18}}, {{markdown}}, {{relative}}, {{extend}}, {{moment}}, and so on.
-* [template-helpers](https://github.com/jonschlinkert/template-helpers): Generic JavaScript helpers that can be used with any template engine. Handlebars, Lo-Dash, Underscore, or any engine that supports helper functions.
+**Params**
 
-## Running tests
-Install dev dependencies.
+* `string` **{String}**: The string to wrap with a layout.
+* `layoutName` **{String}**: The name (key) of the layout object to use.
+* `layoutStack` **{Object}**: Object of layout objects.
+* `options` **{Object}**: Optionally define a `defaultLayout` (string), pass custom delimiters (`layoutDelims`) to use as the placeholder for the content insertion point, or change the name of the placeholder tag with the `tag` option.
+* `fn` **{Function}**: Optionally pass a function to modify the context as each layout is applied.
+* `returns` **{String}**: Returns the original string wrapped with one or more layouts.
 
-```bash
-npm i -d && npm test
+**Example**
+
+```js
+renderLayouts(string, layoutName, layoutStack, options, fn);
 ```
 
+## Related
+
+* [assemble](http://assemble.io): Static site generator for Grunt.js, Yeoman and Node.js. Used by Zurb Foundation, Zurb Ink, H5BP/Effeckt,… [more](http://assemble.io)
+* [handlebars-helpers](https://github.com/assemble/handlebars-helpers): 120+ Handlebars helpers in ~20 categories, for Assemble, YUI, Ghost or any Handlebars project. Includes… [more](https://github.com/assemble/handlebars-helpers)
+* [template](https://github.com/jonschlinkert/template): Render templates using any engine. Supports, layouts, pages, partials and custom template types. Use template… [more](https://github.com/jonschlinkert/template)
+* [template-helpers](https://github.com/jonschlinkert/template-helpers): Generic JavaScript helpers that can be used with any template engine. Handlebars, Lo-Dash, Underscore, or… [more](https://github.com/jonschlinkert/template-helpers)
+* [verb](https://github.com/assemble/verb): Documentation generator for GitHub projects. Extremely powerful, easy to use, can generate anything from API… [more](https://github.com/assemble/verb)
+
+## Running tests
+
+Install dev dependencies:
+
+```sh
+$ npm i -d && npm test
+```
 
 ## Contributing
-Pull requests and stars are always welcome. For bugs and feature requests, [please create an issue](https://github.com/doowb/layouts/issues)
 
+Pull requests and stars are always welcome. For bugs and feature requests, [please create an issue](https://github.com/doowb/layouts/issues/new)
 
 ## Author
 
 **Brian Woodward**
- 
+
 + [github/doowb](https://github.com/doowb)
-+ [twitter/doowb](http://twitter.com/doowb) 
++ [twitter/doowb](http://twitter.com/doowb)
 
 ## License
-Copyright (c) 2014-2015 Brian Woodward  
-Released under the MIT license
+
+Copyright © 2014-2015 [Brian Woodward](https://github.com/doowb)
+Released under the MIT license.
 
 ***
 
-_This file was generated by [verb-cli](https://github.com/assemble/verb-cli) on March 09, 2015._
+_This file was generated by [verb-cli](https://github.com/assemble/verb-cli) on July 17, 2015._

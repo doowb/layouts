@@ -1,7 +1,7 @@
 'use strict';
 
 var isFalsey = require('falsey');
-var Buffer = require('buffer').Buffer;
+var isBuffer = require('is-buffer');
 var delims = require('delimiter-regex');
 var get = require('get-value');
 
@@ -165,9 +165,4 @@ function makeDelimiterRegex(syntax) {
 
 function toString(val) {
   return val == null ? '' : val.toString();
-}
-
-function isBuffer(val) {
-  return typeof val === 'object'
-    && val instanceof Buffer;
 }

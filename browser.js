@@ -1,10 +1,11 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.index = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 'use strict';
 
-var isFalsey = require('falsey');
-var isBuffer = require('is-buffer');
-var delims = require('delimiter-regex');
-var get = require('get-value');
+var lazy = require('lazy-cache')(require);
+lazy('falsey', 'isFalsey');
+lazy('is-buffer', 'isBuffer');
+lazy('delimiter-regex', 'delims');
+lazy('get-value', 'get');
 
 /**
  * Expose `layouts`
@@ -38,7 +39,7 @@ var cache = {};
  */
 
 function renderLayouts(str, name, layoutStack, opts, fn) {
-  if (isBuffer(str)) {
+  if (lazy.isBuffer(str)) {
     str = str.toString();
   }
 
@@ -112,7 +113,7 @@ function renderLayouts(str, name, layoutStack, opts, fn) {
  */
 
 function assertLayout(value, defaultLayout) {
-  if (value === false || (value && isFalsey(value))) {
+  if (value === false || (value && lazy.isFalsey(value))) {
     return null;
   } else if (!value || value === true) {
     return defaultLayout || null;
@@ -130,7 +131,7 @@ function wrapLayout(content, data, syntax) {
   var re = makeDelimiterRegex(syntax);
   return toString(content).replace(re, function(_, tagName) {
     if (tagName.indexOf('.') !== -1) {
-      return toString(get(data, tagName.trim()));
+      return toString(lazy.get(data, tagName.trim()));
     }
     return data[tagName.trim()];
   });
@@ -156,7 +157,7 @@ function makeDelimiterRegex(syntax) {
     return new RegExp(syntax, 'g');
   }
   if (Array.isArray(syntax)) {
-    return (cache[syntax] = delims(syntax));
+    return (cache[syntax] = lazy.delims(syntax));
   }
 }
 
@@ -168,293 +169,69 @@ function toString(val) {
   return val == null ? '' : val.toString();
 }
 
-},{"delimiter-regex":2,"falsey":4,"get-value":5,"is-buffer":8}],2:[function(require,module,exports){
+},{"lazy-cache":2}],2:[function(require,module,exports){
 'use strict';
 
-var extend = require('extend-shallow');
-
-module.exports = function delimiters(open, close, options) {
-  if (open instanceof RegExp) {
-    return open;
-  }
-
-  if (typeof close !== 'string') {
-    options = close;
-    close = null;
-  }
-
-  if (typeof open === 'object' && !Array.isArray(open)) {
-    options = open;
-    open = null;
-    close = null;
-  }
-
-  if (Array.isArray(open)) {
-    var syntax = open.slice();
-    open = syntax[0];
-    close = syntax[1];
-  }
-
-  var opts = extend({flags: ''}, options);
-  var body = '([\\s\\S]+?)';
-
-  open = open ? open : '\\${';
-  close = close ? close : '}';
-
-  return new RegExp(open + body + close, opts.flags);
-};
-
-},{"extend-shallow":3}],3:[function(require,module,exports){
-'use strict';
-
-var typeOf = require('kind-of');
-
 /**
- * Expose `extend`
- */
-
-module.exports = extend;
-
-/**
- * Extend `o` with properties of other `objects`.
+ * Cache results of the first function call to ensure only calling once.
  *
- * @param  {Object} `o` The target object. Pass an empty object to shallow clone.
- * @param  {Object} `objects`
- * @return {Object}
+ * ```js
+ * var lazy = require('lazy-cache')(require);
+ * // cache the call to `require('ansi-yellow')`
+ * lazy('ansi-yellow', 'yellow');
+ * // use `ansi-yellow`
+ * console.log(lazy.yellow('this is yellow'));
+ * ```
+ *
+ * @param  {Function} `fn` Function that will be called only once.
+ * @return {Function} Function that can be called to get the cached function
+ * @api public
  */
 
-function extend(o) {
-  if (typeOf(o) !== 'object') { return {}; }
-  var args = arguments;
-  var len = args.length - 1;
+function lazyCache(fn) {
+  var cache = {};
+  var proxy = function (mod, name) {
+    name = name || camelcase(mod);
+    Object.defineProperty(proxy, name, {
+      get: getter
+    });
 
-  for (var i = 0; i < len; i++) {
-    var obj = args[i + 1];
-
-    if (typeOf(obj) === 'object' && typeOf(obj) !== 'regexp') {
-      for (var key in obj) {
-        if (obj.hasOwnProperty(key)) {
-          o[key] = obj[key];
-        }
+    function getter () {
+      if (cache.hasOwnProperty(name)) {
+        return cache[name];
       }
-    }
-  }
-  return o;
-};
-
-},{"kind-of":9}],4:[function(require,module,exports){
-/*!
- * falsey <https://github.com/jonschlinkert/falsey>
- *
- * Copyright (c) 2014-2015, Jon Schlinkert.
- * Licensed under the MIT License.
- */
-
-'use strict';
-
-var typeOf = require('kind-of');
-
-module.exports = function falsey(val, arr) {
-  var defaults = ['none', 'nil'];
-  if (val === 'false' || val === false) {
-    return true;
-  }
-  if (Array.isArray(val) || typeOf(val) === 'arguments') {
-    return !val.length;
-  }
-  if (typeOf(val) === 'object') {
-    return !Object.keys(val).length;
-  }
-  if (val === '0' || val === 0) {
-    return true;
-  }
-  return !val || (arr || defaults).indexOf(val) !== -1;
-};
-
-
-},{"kind-of":9}],5:[function(require,module,exports){
-/*!
- * get-value <https://github.com/jonschlinkert/get-value>
- *
- * Copyright (c) 2014-2015, Jon Schlinkert.
- * Licensed under the MIT License.
- */
-
-'use strict';
-
-var noncharacters = require('noncharacters');
-var isObject = require('isobject');
-
-module.exports = function getValue(obj, str, fn) {
-  if (!isObject(obj)) return {};
-  if (typeof str !== 'string') return obj;
-
-  var path;
-
-  if (fn && typeof fn === 'function') {
-    path = fn(str);
-  } else if (fn === true) {
-    path = escapePath(str);
-  } else {
-    path = str.split('.');
-  }
-
-  var len = path.length, i = 0;
-  var last = null;
-
-  while(len--) {
-    last = obj[path[i++]];
-    if (!last) { return last; }
-
-    if (isObject(obj)) {
-      obj = last;
-    }
-  }
-  return last;
-};
-
-
-function escape(str) {
-  return str.split('\\.').join(noncharacters[0]);
+      try {
+        return (cache[name] = fn(mod));
+      } catch (err) {
+        err.message = 'lazy-cache ' + err.message + ' ' + __filename;
+        throw err;
+      }
+    };
+    return getter;
+  };
+  return proxy;
 }
 
-function unescape(str) {
-  return str.split(noncharacters[0]).join('.');
-}
+/**
+ * Used to camelcase the name to be stored on the `lazy` object.
+ *
+ * @param  {String} `str` String containing `_`, `.`, `-` or whitespace that will be camelcased.
+ * @return {String} camelcased string.
+ */
 
-function escapePath(str) {
-  return escape(str).split('.').map(function (seg) {
-    return unescape(seg);
+function camelcase(str) {
+  if (str.length === 1) { return str.toLowerCase(); }
+  str = str.replace(/^[\W_]+|[\W_]+$/g, '').toLowerCase();
+  return str.replace(/[\W_]+(\w|$)/g, function (_, ch) {
+    return ch.toUpperCase();
   });
 }
 
-},{"isobject":6,"noncharacters":7}],6:[function(require,module,exports){
-/*!
- * isobject <https://github.com/jonschlinkert/isobject>
- *
- * Copyright (c) 2014-2015, Jon Schlinkert.
- * Licensed under the MIT License.
- */
-
-'use strict';
-
-module.exports = function isObject(val) {
-  return val != null && typeof val === 'object'
-    && !Array.isArray(val);
-};
-
-},{}],7:[function(require,module,exports){
-/*!
- * noncharacters <https://github.com/jonschlinkert/noncharacters>
- *
- * Copyright (c) 2015, Jon Schlinkert.
- * Licensed under the MIT License.
- */
-
-'use strict';
-
-module.exports = [
-  '\uFFFF',
-  '\uFFFE',
-
-  '\uFDD1',
-  '\uFDD2',
-  '\uFDD3',
-  '\uFDD4',
-  '\uFDD5',
-  '\uFDD6',
-  '\uFDD7',
-  '\uFDD8',
-  '\uFDD9',
-  '\uFDDA',
-  '\uFDDB',
-  '\uFDDC',
-  '\uFDDD',
-  '\uFDDE',
-  '\uFDDF',
-  '\uFDE0',
-  '\uFDE1',
-  '\uFDE2',
-  '\uFDE3',
-  '\uFDE4',
-  '\uFDE5',
-  '\uFDE6',
-  '\uFDE7',
-  '\uFDE8',
-  '\uFDE9',
-  '\uFDEA',
-  '\uFDEB',
-  '\uFDEC',
-  '\uFDED',
-  '\uFDEE',
-  '\uFDEF'
-];
-
-},{}],8:[function(require,module,exports){
 /**
- * Determine if an object is Buffer
- *
- * Author:   Feross Aboukhadijeh <feross@feross.org> <http://feross.org>
- * License:  MIT
- *
- * `npm install is-buffer`
+ * Expose `lazyCache`
  */
 
-module.exports = function (obj) {
-  return !!(
-    obj != null &&
-    obj.constructor &&
-    typeof obj.constructor.isBuffer === 'function' &&
-    obj.constructor.isBuffer(obj)
-  )
-}
-
-},{}],9:[function(require,module,exports){
-var toString = Object.prototype.toString;
-
-/**
- * Get the native `typeof` a value.
- *
- * @param  {*} `val`
- * @return {*} Native javascript type
- */
-
-module.exports = function kindOf(val) {
-  if (val === undefined) {
-    return 'undefined';
-  }
-  if (val === null) {
-    return 'null';
-  }
-  if (val === true || val === false || val instanceof Boolean) {
-    return 'boolean';
-  }
-  if (typeof val !== 'object') {
-    return typeof val;
-  }
-  if (Array.isArray(val)) {
-    return 'array';
-  }
-
-  var type = toString.call(val);
-
-  if (val instanceof RegExp || type === '[object RegExp]') {
-    return 'regexp';
-  }
-  if (val instanceof Date || type === '[object Date]') {
-    return 'date';
-  }
-  if (type === '[object Function]') {
-    return 'function';
-  }
-  if (type === '[object Arguments]') {
-    return 'arguments';
-  }
-  if (typeof Buffer !== 'undefined' && Buffer.isBuffer(val)) {
-    return 'buffer';
-  }
-  return type.slice(8, -1).toLowerCase();
-};
+module.exports = lazyCache;
 
 },{}]},{},[1])(1)
 });

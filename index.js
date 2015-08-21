@@ -1,9 +1,10 @@
 'use strict';
 
-var isFalsey = require('falsey');
-var isBuffer = require('is-buffer');
-var delims = require('delimiter-regex');
-var get = require('get-value');
+var lazy = require('lazy-cache')(require);
+lazy('falsey', 'isFalsey');
+lazy('is-buffer', 'isBuffer');
+lazy('delimiter-regex', 'delims');
+lazy('get-value', 'get');
 
 /**
  * Expose `layouts`
@@ -37,7 +38,7 @@ var cache = {};
  */
 
 function renderLayouts(str, name, layoutStack, opts, fn) {
-  if (isBuffer(str)) {
+  if (lazy.isBuffer(str)) {
     str = str.toString();
   }
 
@@ -111,7 +112,7 @@ function renderLayouts(str, name, layoutStack, opts, fn) {
  */
 
 function assertLayout(value, defaultLayout) {
-  if (value === false || (value && isFalsey(value))) {
+  if (value === false || (value && lazy.isFalsey(value))) {
     return null;
   } else if (!value || value === true) {
     return defaultLayout || null;
@@ -129,7 +130,7 @@ function wrapLayout(content, data, syntax) {
   var re = makeDelimiterRegex(syntax);
   return toString(content).replace(re, function(_, tagName) {
     if (tagName.indexOf('.') !== -1) {
-      return toString(get(data, tagName.trim()));
+      return toString(lazy.get(data, tagName.trim()));
     }
     return data[tagName.trim()];
   });
@@ -155,7 +156,7 @@ function makeDelimiterRegex(syntax) {
     return new RegExp(syntax, 'g');
   }
   if (Array.isArray(syntax)) {
-    return (cache[syntax] = delims(syntax));
+    return (cache[syntax] = lazy.delims(syntax));
   }
 }
 

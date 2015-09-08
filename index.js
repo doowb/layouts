@@ -1,10 +1,6 @@
 'use strict';
 
-var lazy = require('lazy-cache')(require);
-lazy('falsey', 'isFalsey');
-lazy('is-buffer', 'isBuffer');
-lazy('delimiter-regex', 'delims');
-lazy('get-value', 'get');
+var utils = require('./utils');
 
 /**
  * Expose `layouts`
@@ -38,7 +34,7 @@ var cache = {};
  */
 
 function renderLayouts(str, name, layoutStack, opts, fn) {
-  if (lazy.isBuffer(str)) {
+  if (utils.isBuffer(str)) {
     str = str.toString();
   }
 
@@ -62,11 +58,13 @@ function renderLayouts(str, name, layoutStack, opts, fn) {
   // recursively resolve layouts
   while (name && (prev !== name) && (layout = layoutStack[name])) {
     var delims = opts.layoutDelims;
+    str = toString(str);
 
     // `data` is passed to `wrapLayout` to resolve layouts
     // to the values on the data object.
     var data = {};
-    data[opts.tag || 'body'] = str;
+    var tag = opts.tag || 'body';
+    data[tag] = str;
 
     // get info about the current layout
     var obj = {};
@@ -75,8 +73,17 @@ function renderLayouts(str, name, layoutStack, opts, fn) {
     obj.before = str;
     obj.depth = depth++;
 
+    // get the delimiter regex
+    var re = makeDelimiterRegex(delims);
+
+    // ensure that content is a string
+    var content = toString(layout.contents || layout.content);
+    if (!re.test(content)) {
+      throw new Error('cannot find layout tag "' + tag + '" in "' + name + '"');
+    }
+
     // inject the string into the layout
-    str = wrapLayout(layout.contents || layout.content, data, delims);
+    str = wrapLayout(content, data, re);
     obj.after = str;
 
     // if a (sync) callback is passed, allow it modify
@@ -112,7 +119,7 @@ function renderLayouts(str, name, layoutStack, opts, fn) {
  */
 
 function assertLayout(value, defaultLayout) {
-  if (value === false || (value && lazy.isFalsey(value))) {
+  if (value === false || (value && utils.isFalsey(value))) {
     return null;
   } else if (!value || value === true) {
     return defaultLayout || null;
@@ -126,12 +133,8 @@ function assertLayout(value, defaultLayout) {
  * `data` object.
  */
 
-function wrapLayout(content, data, syntax) {
-  var re = makeDelimiterRegex(syntax);
-  return toString(content).replace(re, function(_, tagName) {
-    if (tagName.indexOf('.') !== -1) {
-      return toString(lazy.get(data, tagName.trim()));
-    }
+function wrapLayout(str, data, re) {
+  return str.replace(re, function(_, tagName) {
     return data[tagName.trim()];
   });
 }
@@ -156,7 +159,7 @@ function makeDelimiterRegex(syntax) {
     return new RegExp(syntax, 'g');
   }
   if (Array.isArray(syntax)) {
-    return (cache[syntax] = lazy.delims(syntax));
+    return (cache[syntax] = utils.delims(syntax));
   }
 }
 

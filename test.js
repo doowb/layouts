@@ -140,7 +140,7 @@ describe('.layouts():', function () {
       ].join('\n'));
     });
 
-    it('should use custom delimiters', function () {
+    it('should use custom delimiters defined as an array', function () {
       layouts(stack3.aaa.content, 'bbb', stack3, {layoutDelims: ['{{', '}}']}).result.should.eql([
         'default above',
         'ccc above',
@@ -152,6 +152,44 @@ describe('.layouts():', function () {
         'ccc below',
         'default below'
       ].join('\n'));
+    });
+
+    it('should use custom delimiters defined as a string', function () {
+      layouts(stack3.aaa.content, 'bbb', stack3, {layoutDelims: '{{([\\s\\S]+?)}}'}).result.should.eql([
+        'default above',
+        'ccc above',
+        'bbb above',
+        'aaa above',
+        '{{ body }}',
+        'aaa below',
+        'bbb below',
+        'ccc below',
+        'default below'
+      ].join('\n'));
+    });
+
+    it('should use custom delimiters defined as a regex', function () {
+      layouts(stack3.aaa.content, 'bbb', stack3, {layoutDelims: /\{{([\s\S]+?)}}/}).result.should.eql([
+        'default above',
+        'ccc above',
+        'bbb above',
+        'aaa above',
+        '{{ body }}',
+        'aaa below',
+        'bbb below',
+        'ccc below',
+        'default below'
+      ].join('\n'));
+    });
+
+    it('should use default delimiters', function () {
+      var obj = {abc: {content: '{%= body %}[[body]]{%body%}{% body %}<%body%>'}};
+      layouts('INNER', 'abc', obj).result.should.eql('{%= body %}[[body]]{%body%}INNER<%body%>');
+    });
+
+    it('should use custom delimiters', function () {
+      var obj = {abc: {content: '{%= body %}[[body]]{%body%}{% body %}<%body%>'}};
+      layouts('INNER', 'abc', obj, {layoutDelims: ['<%', '%>']}).result.should.eql('{%= body %}[[body]]{%body%}{% body %}INNER');
     });
 
     it('should use custom delimiters and tag', function () {
@@ -205,14 +243,11 @@ describe('.layouts():', function () {
       ].join('\n'));
     });
 
-    it('should use default delimiters', function () {
-      var obj = {abc: {content: '{%= body %}[[body]]{%body%}{% body %}<%body%>'}};
-      layouts('INNER', 'abc', obj).result.should.eql('{%= body %}[[body]]{%body%}INNER<%body%>');
-    });
-
-    it('should use custom delimiters', function () {
-      var obj = {abc: {content: '{%= body %}[[body]]{%body%}{% body %}<%body%>'}};
-      layouts('INNER', 'abc', obj, {layoutDelims: ['<%', '%>']}).result.should.eql('{%= body %}[[body]]{%body%}{% body %}INNER');
+    it('should throw an error when the tag is not defined.', function () {
+      var obj = {blah: {content: 'foo'}};
+      (function() {
+        layouts('This is content', 'blah', obj)
+      }).should.throw('cannot find layout tag "body" in "blah"');
     });
   });
 

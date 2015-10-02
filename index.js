@@ -35,11 +35,15 @@ var cache = {};
 
 function renderLayouts(str, name, layoutStack, opts, fn) {
   if (utils.isBuffer(str)) {
-    str = str.toString();
+    str = String(str);
   }
 
   if (typeof str !== 'string') {
-    throw new TypeError('layouts expects a string.');
+    throw new TypeError('expected content to be a string.');
+  }
+
+  if (typeof name !== 'string') {
+    throw new TypeError('expected layout name to be a string.');
   }
 
   if (typeof opts === 'function') {
@@ -54,11 +58,13 @@ function renderLayouts(str, name, layoutStack, opts, fn) {
 
   // `view` is the object we'll use to store the result
   var view = {options: {}, history: []};
+  name = assertLayout(name, opts.defaultLayout);
 
   // recursively resolve layouts
   while (name && (prev !== name) && (layout = layoutStack[name])) {
+    prev = name;
+
     var delims = opts.layoutDelims;
-    str = toString(str);
 
     // `data` is passed to `wrapLayout` to resolve layouts
     // to the values on the data object.
@@ -67,43 +73,61 @@ function renderLayouts(str, name, layoutStack, opts, fn) {
     data[tag] = str;
 
     // get info about the current layout
-    var obj = {};
-    obj.layout = layout;
-    obj.layout.name = name;
-    obj.before = str;
-    obj.depth = depth++;
+    var obj = new Layout({
+      name: name,
+      layout: layout,
+      before: str,
+      depth: depth++
+    });
 
     // get the delimiter regex
-    var re = makeDelimiterRegex(delims);
+    var re = makeDelimiterRegex(delims, tag);
 
     // ensure that content is a string
-    var content = toString(layout.contents || layout.content);
+    var content = String(layout.content);
     if (!re.test(content)) {
-      throw new Error('cannot find layout tag "' + tag + '" in "' + name + '"');
+      throw error(re, name, tag);
     }
 
     // inject the string into the layout
-    str = wrapLayout(content, data, re);
+    str = wrapLayout(content, data, re, name, tag);
     obj.after = str;
 
-    // if a (sync) callback is passed, allow it modify
-    // the result in place
+    // if a callback is passed, allow it modify the result
     if (typeof fn === 'function') {
       fn(obj, view, depth);
     }
 
     // push info about the layout onto `history`
     view.history.push(obj);
-    prev = name;
 
     // should we recurse again?
     // (does the `layout` itself specify another layout?)
     name = assertLayout(layout.layout, opts.defaultLayout);
   }
 
+  if (typeof name === 'string' && prev !== name) {
+    throw new Error('could not find layout "' + name + '"');
+  }
+
   view.options = opts;
   view.result = str;
   return view;
+}
+
+/**
+ * Create a new layout in the layout stack.
+ *
+ * @param {Object} `view` The layout view object
+ * @param {Number} `depth` Current stack depth
+ */
+
+function Layout(view) {
+  this.layout = view.layout;
+  this.layout.name = view.name;
+  this.before = view.before;
+  this.depth = view.depth;
+  return this;
 }
 
 /**
@@ -133,9 +157,13 @@ function assertLayout(value, defaultLayout) {
  * `data` object.
  */
 
-function wrapLayout(str, data, re) {
+function wrapLayout(str, data, re, name, tag) {
   return str.replace(re, function(_, tagName) {
-    return data[tagName.trim()];
+    var m = data[tagName.trim()];
+    if (typeof m === 'undefined') {
+      throw error(re, name, tag);
+    }
+    return m;
   });
 }
 
@@ -146,8 +174,10 @@ function wrapLayout(str, data, re) {
  * @return {RegExp}
  */
 
-function makeDelimiterRegex(syntax) {
-  if (!syntax) return /\{% ([^{}]+?) %}/g;
+function makeDelimiterRegex(syntax, tag) {
+  if (!syntax) {
+    syntax = makeTag(tag, ['{%', '%}']);
+  }
   if (syntax instanceof RegExp) {
     return syntax;
   }
@@ -158,15 +188,68 @@ function makeDelimiterRegex(syntax) {
   if (typeof syntax === 'string') {
     return new RegExp(syntax, 'g');
   }
-  if (Array.isArray(syntax)) {
-    return (cache[syntax] = utils.delims(syntax));
-  }
+  return (cache[name] = utils.delims(syntax));
 }
 
 /**
  * Cast `val` to a string.
  */
 
-function toString(val) {
-  return val == null ? '' : val.toString();
+function makeTag(val, delims) {
+  return delims[0].trim()
+    + ' ('
+    + String(val).trim()
+    + ') '
+    + delims[1].trim();
+}
+
+/**
+ * Format an error message
+ */
+
+function error(re, name, tag) {
+  var delims = matchDelims(re, tag);
+  return new Error('cannot find "' + delims + '" in "' + name + '"');
+}
+
+/**
+ * Only used if an error is thrown. Attempts to recreate
+ * delimiters for the error message.
+ */
+
+var types = {
+  '{%=': function (str) {
+    return '{%= ' + str + ' %}';
+  },
+  '{%-': function (str) {
+    return '{%- ' + str + ' %}';
+  },
+  '{%': function (str) {
+    return '{% ' + str + ' %}';
+  },
+  '{{': function (str) {
+    return '{{ ' + str + ' }}';
+  },
+  '<%': function (str) {
+    return '<% ' + str + ' %>';
+  },
+  '<%=': function (str) {
+    return '<%= ' + str + ' %>';
+  },
+  '<%-': function (str) {
+    return '<%- ' + str + ' %>';
+  }
+};
+
+function matchDelims(re, str) {
+  var ch = re.source.slice(0, 4);
+  if (/[\\]/.test(ch.charAt(0))) {
+    ch = ch.slice(1);
+  }
+  if (!/[-=]/.test(ch.charAt(2))) {
+    ch = ch.slice(0, 2);
+  } else {
+    ch = ch.slice(0, 3);
+  }
+  return types[ch](str);
 }

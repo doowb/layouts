@@ -18,7 +18,89 @@ describe('errors:', function () {
   it('should throw an error when invalid arguments are passed:', function () {
     (function () {
       layouts();
-    }).should.throw('layouts expects a string.');
+    }).should.throw('expected content to be a string.');
+  });
+
+  it('should apply a layout to the given string.', function () {
+    (function () {
+      layouts('This is content', {});
+    }).should.throw('expected layout name to be a string.');
+  });
+
+  it('should throw an error when the tag is not defined.', function () {
+    var obj = {blah: {content: 'foo'}};
+    (function() {
+      layouts('This is content', 'blah', obj)
+    }).should.throw('cannot find "{% body %}" in "blah"');
+  });
+});
+
+describe('when the body tag is not found:', function () {
+  it('should throw an error with default delims:', function () {
+    (function () {
+      var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
+      var res = layouts('This is content', 'abc', obj);
+    }).should.throw('cannot find "{% body %}" in "abc"');
+  });
+
+  it('should throw an error when custom delims are an array:', function () {
+    (function () {
+      var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
+      var res = layouts('This is content', 'abc', obj, {layoutDelims: ['{%', '%}']});
+    }).should.throw('cannot find "{% body %}" in "abc"');
+
+    (function () {
+      var obj = {abc: {content: 'blah above\n{%= ody %}\nblah below'}};
+      var res = layouts('This is content', 'abc', obj, {layoutDelims: ['{%=', '%}']});
+    }).should.throw('cannot find "{%= body %}" in "abc"');
+
+    (function () {
+      var obj = {abc: {content: 'blah above\n{%- ody %}\nblah below'}};
+      var res = layouts('This is content', 'abc', obj, {layoutDelims: ['{%-', '%}']});
+    }).should.throw('cannot find "{%- body %}" in "abc"');
+
+    (function () {
+      var obj = {abc: {content: 'blah above\n<% ody %>\nblah below'}};
+      var res = layouts('This is content', 'abc', obj, {layoutDelims: ['<%', '%>']});
+    }).should.throw('cannot find "<% body %>" in "abc"');
+
+    (function () {
+      var obj = {abc: {content: 'blah above\n<%= ody %>\nblah below'}};
+      var res = layouts('This is content', 'abc', obj, {layoutDelims: ['<%=', '%>']});
+    }).should.throw('cannot find "<%= body %>" in "abc"');
+
+    (function () {
+      var obj = {abc: {content: 'blah above\n<%- ody %>\nblah below'}};
+      var res = layouts('This is content', 'abc', obj, {layoutDelims: ['<%-', '%>']});
+    }).should.throw('cannot find "<%- body %>" in "abc"');
+  });
+
+  it('should throw an error when custom delims are a regex:', function () {
+    (function () {
+      var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
+      var res = layouts('This is content', 'abc', obj, {layoutDelims: /\{%([\s\S]+?)%}/g});
+    }).should.throw('cannot find "{% body %}" in "abc"');
+  });
+
+  it('should throw an error when custom delims are a string:', function () {
+    (function () {
+      var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
+      var res = layouts('This is content', 'abc', obj, {layoutDelims: '{{([\\s\\S]+?)}}'});
+    }).should.throw('cannot find "{{ body }}" in "abc"');
+  });
+
+  it('should throw an error when custom delims are an array:', function () {
+    (function () {
+      var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
+      var res = layouts('This is content', 'abc', obj, {layoutDelims: ['{{', '}}']});
+    }).should.throw('cannot find "{{ body }}" in "abc"');
+  });
+
+  it('should throw an error when a layout is not applied.', function () {
+    (function () {
+      var obj = {abc: {content: 'blah above\n{% body %}\nblah below'}};
+      layouts('This is content', 'foobar', obj);
+    }).should.throw('could not find layout "foobar"');
   });
 });
 
@@ -60,6 +142,35 @@ describe('.layouts():', function () {
       'blah above',
       'This is content',
       'blah below'
+    ].join('\n'));
+  });
+
+  describe('when a defaultLayout is defined', function () {
+    it('should apply the default layout if the name is an empty string:', function () {
+      var obj = {abc: {content: 'blah above\n{% body %}\nblah below'}};
+      layouts('This is content', '', obj, {defaultLayout: 'abc'}).result.should.eql([
+        'blah above',
+        'This is content',
+        'blah below'
+      ].join('\n'));
+    });
+
+    it('should still throw an error if layout is specified and not found', function () {
+      (function () {
+        var obj = {abc: {content: 'blah above\n{% body %}\nblah below'}};
+        layouts('This is content', 'ffo', obj, {defaultLayout: 'abc'});
+      }).should.throw('could not find layout "ffo"');
+    });
+  });
+
+  it('should not apply a layout when the layout name is falsey', function () {
+    var obj = {abc: {content: 'blah above\n{% body %}\nblah below'}};
+    layouts('This is content', 'false', obj).result.should.eql([
+      'This is content',
+    ].join('\n'));
+
+    layouts('This is content', 'nil', obj).result.should.eql([
+      'This is content',
     ].join('\n'));
   });
 
@@ -241,13 +352,6 @@ describe('.layouts():', function () {
         'This is content',
         'blah below'
       ].join('\n'));
-    });
-
-    it('should throw an error when the tag is not defined.', function () {
-      var obj = {blah: {content: 'foo'}};
-      (function() {
-        layouts('This is content', 'blah', obj)
-      }).should.throw('cannot find layout tag "body" in "blah"');
     });
   });
 

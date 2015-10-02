@@ -1,7 +1,7 @@
 {
   "name": "layouts",
   "description": "Wraps templates with layouts. Layouts can use other layouts and be nested to any depth. This can be used 100% standalone to wrap any kind of file with banners, headers or footer content. Use for markdown, HTML, handlebars views, lo-dash templates, etc. Layouts can also be vinyl files.",
-  "version": "0.10.5",
+  "version": "0.10.6",
   "homepage": "https://github.com/doowb/layouts",
   "author": "Brian Woodward (https://github.com/doowb)",
   "repository": "doowb/layouts",
@@ -90,11 +90,10 @@
   "verb": {
     "related": {
       "list": [
-        "template",
+        "templates",
         "assemble",
-        "verb",
-        "handlebars-helpers",
-        "template-helpers"
+        "inject-snippet",
+        "handlebars-layouts"
       ]
     }
   }

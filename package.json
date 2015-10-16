@@ -9,7 +9,16 @@
     "url": "https://github.com/doowb/layouts/issues"
   },
   "contributors": [
-    "Jon Schlinkert, (https://github.com/jonschlinkert)"
+    {
+      "name": "Jon Schlinkert",
+      "email": "github@sellside.com",
+      "url": "https://github.com/jonschlinkert"
+    },
+    {
+      "name": "Brian Woodward",
+      "email": "brian.woodward@gmail.com",
+      "url": "https://github.com/doowb"
+    }
   ],
   "license": "MIT",
   "files": [

@@ -102,6 +102,9 @@
     "plugins": [
       "gulp-format-md"
     ],
-    "layout": "default"
+    "layout": "default",
+    "reflinks": [
+      "vinyl"
+    ]
   }
 }

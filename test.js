@@ -98,7 +98,7 @@ describe('when the body tag is not found:', function() {
 
   it('should throw an error when a layout is not applied.', function() {
     (function() {
-      var obj = {abc: {content: 'blah above\n{% body %}\nblah below'}};
+      var obj = {abc: {path: 'blah', content: 'blah above\n{% body %}\nblah below'}};
       layouts('This is content', 'foobar', obj);
     }).should.throw('could not find layout "foobar"');
   });
@@ -157,7 +157,7 @@ describe('.layouts():', function() {
 
     it('should still throw an error if layout is specified and not found', function() {
       (function() {
-        var obj = {abc: {content: 'blah above\n{% body %}\nblah below'}};
+        var obj = {abc: {path: 'blah', content: 'blah above\n{% body %}\nblah below'}};
         layouts('This is content', 'ffo', obj, {defaultLayout: 'abc'});
       }).should.throw('could not find layout "ffo"');
     });

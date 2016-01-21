@@ -1,5 +1,6 @@
 'use strict';
 
+var path = require('path');
 var utils = require('./utils');
 
 /**
@@ -21,27 +22,26 @@ var cache = {};
  * Wrap one or more layouts around `string`.
  *
  * ```js
- * renderLayouts(string, layoutName, layoutStack, options, fn);
+ * renderLayouts(string, layoutName, layouts, options, fn);
  * ```
  *
  * @param  {String} `string` The string to wrap with a layout.
  * @param  {String} `layoutName` The name (key) of the layout object to use.
- * @param  {Object} `layoutStack` Object of layout objects.
+ * @param  {Object} `layouts` Object of layout objects.
  * @param  {Object} `options` Optionally define a `defaultLayout` (string), pass custom delimiters (`layoutDelims`) to use as the placeholder for the content insertion point, or change the name of the placeholder tag with the `tag` option.
  * @param  {Function} `fn` Optionally pass a function to modify the context as each layout is applied.
  * @return {String} Returns the original string wrapped with one or more layouts.
  * @api public
  */
 
-function renderLayouts(str, name, layoutStack, opts, fn) {
-  if (utils.isBuffer(str)) {
+function renderLayouts(str, name, layouts, opts, fn) {
+  if (isBuffer(str)) {
     str = String(str);
   }
 
   if (typeof str !== 'string') {
     throw new TypeError('expected content to be a string.');
   }
-
   if (typeof name !== 'string') {
     throw new TypeError('expected layout name to be a string.');
   }
@@ -61,7 +61,7 @@ function renderLayouts(str, name, layoutStack, opts, fn) {
   name = assertLayout(name, opts.defaultLayout);
 
   // recursively resolve layouts
-  while (name && (prev !== name) && (layout = layoutStack[name])) {
+  while (name && (prev !== name) && (layout = utils.getView(name, layouts))) {
     prev = name;
 
     var delims = opts.layoutDelims;
@@ -102,7 +102,7 @@ function renderLayouts(str, name, layoutStack, opts, fn) {
     view.history.push(obj);
 
     // should we recurse again?
-    // (does the `layout` itself specify another layout?)
+    // does the `layout` specify another layout?
     name = assertLayout(layout.layout, opts.defaultLayout);
   }
 
@@ -218,25 +218,25 @@ function error(re, name, tag) {
  */
 
 var types = {
-  '{%=': function (str) {
+  '{%=': function(str) {
     return '{%= ' + str + ' %}';
   },
-  '{%-': function (str) {
+  '{%-': function(str) {
     return '{%- ' + str + ' %}';
   },
-  '{%': function (str) {
+  '{%': function(str) {
     return '{% ' + str + ' %}';
   },
-  '{{': function (str) {
+  '{{': function(str) {
     return '{{ ' + str + ' }}';
   },
-  '<%': function (str) {
+  '<%': function(str) {
     return '<% ' + str + ' %>';
   },
-  '<%=': function (str) {
+  '<%=': function(str) {
     return '<%= ' + str + ' %>';
   },
-  '<%-': function (str) {
+  '<%-': function(str) {
     return '<%- ' + str + ' %>';
   }
 };
@@ -252,4 +252,16 @@ function matchDelims(re, str) {
     ch = ch.slice(0, 3);
   }
   return types[ch](str);
+}
+
+
+/**
+ * Return true if the given value is a buffer
+ */
+
+function isBuffer(val) {
+  if (val && val.constructor && typeof val.constructor.isBuffer === 'function') {
+    return val.constructor.isBuffer(val);
+  }
+  return false;
 }

@@ -9,8 +9,8 @@ var fn = require;
 
 require = lazy;
 require('falsey', 'isFalsey');
-require('is-buffer', 'isBuffer');
 require('delimiter-regex', 'delims');
+require('get-view');
 require = fn;
 
 /**

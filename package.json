@@ -4,13 +4,13 @@
   "version": "0.10.6",
   "homepage": "https://github.com/doowb/layouts",
   "author": "Brian Woodward (https://github.com/doowb)",
+  "contributors": [
+    "Jon Schlinkert, (https://github.com/jonschlinkert)"
+  ],
   "repository": "doowb/layouts",
   "bugs": {
     "url": "https://github.com/doowb/layouts/issues"
   },
-  "contributors": [
-    "Jon Schlinkert, (https://github.com/jonschlinkert)"
-  ],
   "license": "MIT",
   "files": [
     "index.js",
@@ -36,8 +36,8 @@
     "gulp-mocha": "^2.1.3",
     "jshint-stylish": "^2.0.1",
     "lodash": "^3.10.0",
-    "mocha": "^2.2.5",
-    "should": "^7.0.2",
+    "mocha": "*",
+    "should": "*",
     "to-vinyl": "^0.2.0"
   },
   "keywords": [

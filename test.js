@@ -14,20 +14,20 @@ var toVinyl = require('to-vinyl');
 var layouts = require('./');
 var _ = require('lodash');
 
-describe('errors:', function () {
-  it('should throw an error when invalid arguments are passed:', function () {
-    (function () {
+describe('errors:', function() {
+  it('should throw an error when invalid arguments are passed:', function() {
+    (function() {
       layouts();
     }).should.throw('expected content to be a string.');
   });
 
-  it('should apply a layout to the given string.', function () {
-    (function () {
+  it('should apply a layout to the given string.', function() {
+    (function() {
       layouts('This is content', {});
     }).should.throw('expected layout name to be a string.');
   });
 
-  it('should throw an error when the tag is not defined.', function () {
+  it('should throw an error when the tag is not defined.', function() {
     var obj = {blah: {content: 'foo'}};
     (function() {
       layouts('This is content', 'blah', obj)
@@ -35,76 +35,76 @@ describe('errors:', function () {
   });
 });
 
-describe('when the body tag is not found:', function () {
-  it('should throw an error with default delims:', function () {
-    (function () {
+describe('when the body tag is not found:', function() {
+  it('should throw an error with default delims:', function() {
+    (function() {
       var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
       var res = layouts('This is content', 'abc', obj);
     }).should.throw('cannot find "{% body %}" in "abc"');
   });
 
-  it('should throw an error when custom delims are an array:', function () {
-    (function () {
+  it('should throw an error when custom delims are an array:', function() {
+    (function() {
       var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
       var res = layouts('This is content', 'abc', obj, {layoutDelims: ['{%', '%}']});
     }).should.throw('cannot find "{% body %}" in "abc"');
 
-    (function () {
+    (function() {
       var obj = {abc: {content: 'blah above\n{%= ody %}\nblah below'}};
       var res = layouts('This is content', 'abc', obj, {layoutDelims: ['{%=', '%}']});
     }).should.throw('cannot find "{%= body %}" in "abc"');
 
-    (function () {
+    (function() {
       var obj = {abc: {content: 'blah above\n{%- ody %}\nblah below'}};
       var res = layouts('This is content', 'abc', obj, {layoutDelims: ['{%-', '%}']});
     }).should.throw('cannot find "{%- body %}" in "abc"');
 
-    (function () {
+    (function() {
       var obj = {abc: {content: 'blah above\n<% ody %>\nblah below'}};
       var res = layouts('This is content', 'abc', obj, {layoutDelims: ['<%', '%>']});
     }).should.throw('cannot find "<% body %>" in "abc"');
 
-    (function () {
+    (function() {
       var obj = {abc: {content: 'blah above\n<%= ody %>\nblah below'}};
       var res = layouts('This is content', 'abc', obj, {layoutDelims: ['<%=', '%>']});
     }).should.throw('cannot find "<%= body %>" in "abc"');
 
-    (function () {
+    (function() {
       var obj = {abc: {content: 'blah above\n<%- ody %>\nblah below'}};
       var res = layouts('This is content', 'abc', obj, {layoutDelims: ['<%-', '%>']});
     }).should.throw('cannot find "<%- body %>" in "abc"');
   });
 
-  it('should throw an error when custom delims are a regex:', function () {
-    (function () {
+  it('should throw an error when custom delims are a regex:', function() {
+    (function() {
       var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
       var res = layouts('This is content', 'abc', obj, {layoutDelims: /\{%([\s\S]+?)%}/g});
     }).should.throw('cannot find "{% body %}" in "abc"');
   });
 
-  it('should throw an error when custom delims are a string:', function () {
-    (function () {
+  it('should throw an error when custom delims are a string:', function() {
+    (function() {
       var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
       var res = layouts('This is content', 'abc', obj, {layoutDelims: '{{([\\s\\S]+?)}}'});
     }).should.throw('cannot find "{{ body }}" in "abc"');
   });
 
-  it('should throw an error when custom delims are an array:', function () {
-    (function () {
+  it('should throw an error when custom delims are an array:', function() {
+    (function() {
       var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
       var res = layouts('This is content', 'abc', obj, {layoutDelims: ['{{', '}}']});
     }).should.throw('cannot find "{{ body }}" in "abc"');
   });
 
-  it('should throw an error when a layout is not applied.', function () {
-    (function () {
+  it('should throw an error when a layout is not applied.', function() {
+    (function() {
       var obj = {abc: {content: 'blah above\n{% body %}\nblah below'}};
       layouts('This is content', 'foobar', obj);
     }).should.throw('could not find layout "foobar"');
   });
 });
 
-describe('.layouts():', function () {
+describe('.layouts():', function() {
   var stack = {
     'default': {
       content: 'default above\n{% body %}\ndefault below',
@@ -136,7 +136,7 @@ describe('.layouts():', function () {
     }
   };
 
-  it('should apply a layout to the given string.', function () {
+  it('should apply a layout to the given string.', function() {
     var obj = {abc: {content: 'blah above\n{% body %}\nblah below'}};
     layouts('This is content', 'abc', obj).result.should.eql([
       'blah above',
@@ -145,8 +145,8 @@ describe('.layouts():', function () {
     ].join('\n'));
   });
 
-  describe('when a defaultLayout is defined', function () {
-    it('should apply the default layout if the name is an empty string:', function () {
+  describe('when a defaultLayout is defined', function() {
+    it('should apply the default layout if the name is an empty string:', function() {
       var obj = {abc: {content: 'blah above\n{% body %}\nblah below'}};
       layouts('This is content', '', obj, {defaultLayout: 'abc'}).result.should.eql([
         'blah above',
@@ -155,15 +155,15 @@ describe('.layouts():', function () {
       ].join('\n'));
     });
 
-    it('should still throw an error if layout is specified and not found', function () {
-      (function () {
+    it('should still throw an error if layout is specified and not found', function() {
+      (function() {
         var obj = {abc: {content: 'blah above\n{% body %}\nblah below'}};
         layouts('This is content', 'ffo', obj, {defaultLayout: 'abc'});
       }).should.throw('could not find layout "ffo"');
     });
   });
 
-  it('should not apply a layout when the layout name is falsey', function () {
+  it('should not apply a layout when the layout name is falsey', function() {
     var obj = {abc: {content: 'blah above\n{% body %}\nblah below'}};
     layouts('This is content', 'false', obj).result.should.eql([
       'This is content',
@@ -174,8 +174,8 @@ describe('.layouts():', function () {
     ].join('\n'));
   });
 
-  describe('apply layouts.', function () {
-    it('should wrap a string with a layout.', function () {
+  describe('apply layouts.', function() {
+    it('should wrap a string with a layout.', function() {
       var obj = {abc: {content: 'blah above\n{% body %}\n{% body %}\nblah below'}};
       layouts('This is content', 'abc', obj).result.should.eql([
         'blah above',
@@ -185,7 +185,7 @@ describe('.layouts():', function () {
       ].join('\n'));
     });
 
-    it('should replace the `{%= body %}` tag with content.', function () {
+    it('should replace the `{%= body %}` tag with content.', function() {
       layouts('This is content', 'aaa', stack).result.should.eql([
         'default above',
         'ccc above',
@@ -199,7 +199,7 @@ describe('.layouts():', function () {
       ].join('\n'));
     });
 
-    it('should not replace the `{%= body %}` tag when no content is passed.', function () {
+    it('should not replace the `{%= body %}` tag when no content is passed.', function() {
       layouts(stack.aaa.content, 'bbb', stack).result.should.eql([
         'default above',
         'ccc above',
@@ -214,7 +214,7 @@ describe('.layouts():', function () {
     });
   });
 
-  describe('custom placeholders', function () {
+  describe('custom placeholders', function() {
     var stack2 = {
       'default': {content: 'default above\n{% foo %}\ndefault below', locals: {title: 'Quux'}},
       aaa: {content: 'aaa above\n{% foo %}\naaa below', locals: {title: 'Foo'}, layout: 'bbb'},
@@ -237,7 +237,7 @@ describe('.layouts():', function () {
       ddd: {content: 'ddd above\n{{ foo }}\nddd below', locals: {title: 'Baz'} }
     };
 
-    it('should use a custom tag', function () {
+    it('should use a custom tag', function() {
       layouts(stack2.aaa.content, 'bbb', stack2, {tag: 'foo'}).result.should.eql([
         'default above',
         'ccc above',
@@ -251,7 +251,7 @@ describe('.layouts():', function () {
       ].join('\n'));
     });
 
-    it('should use custom delimiters defined as an array', function () {
+    it('should use custom delimiters defined as an array', function() {
       layouts(stack3.aaa.content, 'bbb', stack3, {layoutDelims: ['{{', '}}']}).result.should.eql([
         'default above',
         'ccc above',
@@ -265,7 +265,7 @@ describe('.layouts():', function () {
       ].join('\n'));
     });
 
-    it('should use custom delimiters defined as a string', function () {
+    it('should use custom delimiters defined as a string', function() {
       layouts(stack3.aaa.content, 'bbb', stack3, {layoutDelims: '{{([\\s\\S]+?)}}'}).result.should.eql([
         'default above',
         'ccc above',
@@ -279,7 +279,7 @@ describe('.layouts():', function () {
       ].join('\n'));
     });
 
-    it('should use custom delimiters defined as a regex', function () {
+    it('should use custom delimiters defined as a regex', function() {
       layouts(stack3.aaa.content, 'bbb', stack3, {layoutDelims: /\{{([\s\S]+?)}}/}).result.should.eql([
         'default above',
         'ccc above',
@@ -293,17 +293,17 @@ describe('.layouts():', function () {
       ].join('\n'));
     });
 
-    it('should use default delimiters', function () {
+    it('should use default delimiters', function() {
       var obj = {abc: {content: '{%= body %}[[body]]{%body%}{% body %}<%body%>'}};
       layouts('INNER', 'abc', obj).result.should.eql('{%= body %}[[body]]{%body%}INNER<%body%>');
     });
 
-    it('should use custom delimiters', function () {
+    it('should use custom delimiters', function() {
       var obj = {abc: {content: '{%= body %}[[body]]{%body%}{% body %}<%body%>'}};
       layouts('INNER', 'abc', obj, {layoutDelims: ['<%', '%>']}).result.should.eql('{%= body %}[[body]]{%body%}{% body %}INNER');
     });
 
-    it('should use custom delimiters and tag', function () {
+    it('should use custom delimiters and tag', function() {
       layouts(stack4.aaa.content, 'bbb', stack4, {tag: 'foo', layoutDelims: ['{{', '}}']}).result.should.eql([
         'default above',
         'ccc above',
@@ -318,7 +318,7 @@ describe('.layouts():', function () {
     });
   });
 
-  describe('layout delimiters', function () {
+  describe('layout delimiters', function() {
     var stack = {
       'default': {
         content: 'default above\n{% body %}\ndefault below',
@@ -345,7 +345,7 @@ describe('.layouts():', function () {
       }
     };
 
-    it('should apply a layout to the given string.', function () {
+    it('should apply a layout to the given string.', function() {
       var obj = {blah: {content: 'blah above\n{% body %}\nblah below'}};
       layouts('This is content', 'blah', obj).result.should.eql([
         'blah above',
@@ -356,7 +356,7 @@ describe('.layouts():', function () {
   });
 
 
-  describe('stack', function () {
+  describe('stack', function() {
     var stack = {
       'default': {
         content: 'default above\n{% body %}\ndefault below',
@@ -383,16 +383,16 @@ describe('.layouts():', function () {
       }
     };
 
-    it('should return an object with the layout history.', function () {
+    it('should return an object with the layout history.', function() {
       var obj = {blah: {content: 'blah above\n{% body %}\nblah below'}};
       var actual = layouts('This is content', 'blah', obj);
       actual.should.have.properties(['history', 'options', 'result']);
       actual.history.should.be.an.array;
     });
 
-    it('should push all layouts onto the stack:', function () {
+    it('should push all layouts onto the stack:', function() {
       var scripts = [];
-      var actual = layouts('This is content', 'aaa', stack, function (ele, res) {
+      var actual = layouts('This is content', 'aaa', stack, function(ele, res) {
         res.scripts = _.union([], res.scripts, ele.layout.data.scripts || []);
       });
     });
@@ -400,8 +400,8 @@ describe('.layouts():', function () {
 });
 
 
-describe('buffers:', function () {
-  it('should support buffers.', function () {
+describe('buffers:', function() {
+  it('should support buffers.', function() {
     var obj = {
       abc: {content: new Buffer('blah above\n{% body %}\nblah below')}
     };
@@ -417,7 +417,7 @@ describe('buffers:', function () {
   });
 });
 
-describe('gulp / vinyl:', function () {
+describe('gulp / vinyl:', function() {
   var stack = {
     'default': {
       path: 'default.html',
@@ -461,7 +461,7 @@ describe('gulp / vinyl:', function () {
     return res;
   }
 
-  it('should replace the `{%= body %}` tag with content.', function () {
+  it('should replace the `{%= body %}` tag with content.', function() {
     layouts('This is content', 'aaa', vinylize(stack)).result.should.eql([
       'default above',
       'ccc above',

@@ -4,102 +4,158 @@
  * Copyright (c) 2014-2015, Brian Woodward.
  * Licensed under the MIT License.
  */
-
 'use strict';
 
 /* deps:mocha */
-require('should');
 var toVinyl = require('to-vinyl');
+var assert = require('assert');
 var layouts = require('./');
 var _ = require('lodash');
 
 describe('errors:', function() {
-  it('should throw an error when invalid arguments are passed:', function() {
-    (function() {
+  it('should throw an error when invalid arguments are passed:', function(cb) {
+    try {
       layouts();
-    }).should.throw('expected content to be a string.');
+      cb(new Error('expected an error'));
+    } catch (err) {
+      assert.equal(err.message, 'expected content to be a string.');
+      cb();
+    }
   });
 
-  it('should apply a layout to the given string.', function() {
-    (function() {
+  it('should apply a layout to the given string.', function(cb) {
+    try {
       layouts('This is content', {});
-    }).should.throw('expected layout name to be a string.');
+      cb(new Error('expected an error'));
+    } catch (err) {
+      assert.equal(err.message, 'expected layout name to be a string.');
+      cb();
+    }
   });
 
-  it('should throw an error when the tag is not defined.', function() {
+  it('should throw an error when the tag is not defined.', function(cb) {
     var obj = {blah: {content: 'foo'}};
-    (function() {
+    try {
       layouts('This is content', 'blah', obj);
-    }).should.throw('cannot find "{% body %}" in "blah"');
+      cb(new Error('expected an error'));
+    } catch (err) {
+      assert.equal(err.message, 'cannot find "{% body %}" in "blah"');
+      cb();
+    }
   });
 });
 
 describe('when the body tag is not found:', function() {
-  it('should throw an error with default delims:', function() {
-    (function() {
+  it('should throw an error with default delims:', function(cb) {
+    try {
       var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
       layouts('This is content', 'abc', obj);
-    }).should.throw('cannot find "{% body %}" in "abc"');
+      cb(new Error('expected an error'));
+    } catch (err) {
+      assert.equal(err.message, 'cannot find "{% body %}" in "abc"');
+      cb();
+    }
   });
 
-  it('should throw an error when custom delims are an array:', function() {
-    (function() {
+  it('should throw an error when custom delims are an array:', function(cb) {
+    try {
       var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
       layouts('This is content', 'abc', obj, {layoutDelims: ['{%', '%}']});
-    }).should.throw('cannot find "{% body %}" in "abc"');
+      cb(new Error('expected an error'));
+      return;
+    } catch (err) {
+      assert.equal(err.message, 'cannot find "{% body %}" in "abc"');
+    }
 
-    (function() {
+    try {
       var obj = {abc: {content: 'blah above\n{%= ody %}\nblah below'}};
       layouts('This is content', 'abc', obj, {layoutDelims: ['{%=', '%}']});
-    }).should.throw('cannot find "{%= body %}" in "abc"');
+      cb(new Error('expected an error'));
+      return;
+    } catch (err) {
+      assert.equal(err.message, 'cannot find "{%= body %}" in "abc"');
+    }
 
-    (function() {
+    try {
       var obj = {abc: {content: 'blah above\n{%- ody %}\nblah below'}};
       layouts('This is content', 'abc', obj, {layoutDelims: ['{%-', '%}']});
-    }).should.throw('cannot find "{%- body %}" in "abc"');
+      cb(new Error('expected an error'));
+      return;
+    } catch (err) {
+      assert.equal(err.message, 'cannot find "{%- body %}" in "abc"');
+    }
 
-    (function() {
+    try {
       var obj = {abc: {content: 'blah above\n<% ody %>\nblah below'}};
       layouts('This is content', 'abc', obj, {layoutDelims: ['<%', '%>']});
-    }).should.throw('cannot find "<% body %>" in "abc"');
+      cb(new Error('expected an error'));
+      return;
+    } catch (err) {
+      assert.equal(err.message, 'cannot find "<% body %>" in "abc"');
+    }
 
-    (function() {
+    try {
       var obj = {abc: {content: 'blah above\n<%= ody %>\nblah below'}};
       layouts('This is content', 'abc', obj, {layoutDelims: ['<%=', '%>']});
-    }).should.throw('cannot find "<%= body %>" in "abc"');
+      cb(new Error('expected an error'));
+      return;
+    } catch (err) {
+      assert.equal(err.message, 'cannot find "<%= body %>" in "abc"');
+    }
 
-    (function() {
+    try {
       var obj = {abc: {content: 'blah above\n<%- ody %>\nblah below'}};
       layouts('This is content', 'abc', obj, {layoutDelims: ['<%-', '%>']});
-    }).should.throw('cannot find "<%- body %>" in "abc"');
+      cb(new Error('expected an error'));
+      return;
+    } catch (err) {
+      assert.equal(err.message, 'cannot find "<%- body %>" in "abc"');
+    }
+    cb();
   });
 
-  it('should throw an error when custom delims are a regex:', function() {
-    (function() {
+  it('should throw an error when custom delims are a regex:', function(cb) {
+    try {
       var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
       layouts('This is content', 'abc', obj, {layoutDelims: /\{%([\s\S]+?)%}/g});
-    }).should.throw('cannot find "{% body %}" in "abc"');
+      cb(new Error('expected an error'));
+    } catch (err) {
+      assert.equal(err.message, 'cannot find "{% body %}" in "abc"');
+      cb();
+    }
   });
 
-  it('should throw an error when custom delims are a string:', function() {
-    (function() {
+  it('should throw an error when custom delims are a string:', function(cb) {
+    try {
       var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
       layouts('This is content', 'abc', obj, {layoutDelims: '{{([\\s\\S]+?)}}'});
-    }).should.throw('cannot find "{{ body }}" in "abc"');
+      cb(new Error('expected an error'));
+    } catch (err) {
+      assert.equal(err.message, 'cannot find "{{ body }}" in "abc"');
+      cb();
+    }
   });
 
-  it('should throw an error when custom delims are an array:', function() {
-    (function() {
+  it('should throw an error when custom delims are an array:', function(cb) {
+    try {
       var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
       layouts('This is content', 'abc', obj, {layoutDelims: ['{{', '}}']});
-    }).should.throw('cannot find "{{ body }}" in "abc"');
+      cb(new Error('expected an error'));
+    } catch (err) {
+      assert.equal(err.message, 'cannot find "{{ body }}" in "abc"');
+      cb();
+    }
   });
 
-  it('should throw an error when a layout is not applied.', function() {
-    (function() {
+  it('should throw an error when a layout is not applied.', function(cb) {
+    try {
       var obj = {abc: {path: 'blah', content: 'blah above\n{% body %}\nblah below'}};
       layouts('This is content', 'foobar', obj);
-    }).should.throw('could not find layout "foobar"');
+      cb(new Error('expected an error'));
+    } catch (err) {
+      assert.equal(err.message, 'could not find layout "foobar"');
+      cb();
+    }
   });
 });
 
@@ -137,7 +193,7 @@ describe('.layouts():', function() {
 
   it('should apply a layout to the given string.', function() {
     var obj = {abc: {content: 'blah above\n{% body %}\nblah below'}};
-    layouts('This is content', 'abc', obj).result.should.eql([
+    assert.deepEqual(layouts('This is content', 'abc', obj).result, [
       'blah above',
       'This is content',
       'blah below'
@@ -147,28 +203,32 @@ describe('.layouts():', function() {
   describe('when a defaultLayout is defined', function() {
     it('should apply the default layout if the name is an empty string:', function() {
       var obj = {abc: {content: 'blah above\n{% body %}\nblah below'}};
-      layouts('This is content', '', obj, {defaultLayout: 'abc'}).result.should.eql([
+      assert.deepEqual(layouts('This is content', '', obj, {defaultLayout: 'abc'}).result, [
         'blah above',
         'This is content',
         'blah below'
       ].join('\n'));
     });
 
-    it('should still throw an error if layout is specified and not found', function() {
-      (function() {
+    it('should still throw an error if layout is specified and not found', function(cb) {
+      try {
         var obj = {abc: {path: 'blah', content: 'blah above\n{% body %}\nblah below'}};
         layouts('This is content', 'ffo', obj, {defaultLayout: 'abc'});
-      }).should.throw('could not find layout "ffo"');
+        cb(new Error('expected an error'));
+      } catch (err) {
+        assert.equal(err.message, 'could not find layout "ffo"');
+        cb();
+      }
     });
   });
 
   it('should not apply a layout when the layout name is falsey', function() {
     var obj = {abc: {content: 'blah above\n{% body %}\nblah below'}};
-    layouts('This is content', 'false', obj).result.should.eql([
+    assert.deepEqual(layouts('This is content', 'false', obj).result, [
       'This is content'
     ].join('\n'));
 
-    layouts('This is content', 'nil', obj).result.should.eql([
+    assert.deepEqual(layouts('This is content', 'nil', obj).result, [
       'This is content'
     ].join('\n'));
   });
@@ -176,7 +236,7 @@ describe('.layouts():', function() {
   describe('apply layouts.', function() {
     it('should wrap a string with a layout.', function() {
       var obj = {abc: {content: 'blah above\n{% body %}\n{% body %}\nblah below'}};
-      layouts('This is content', 'abc', obj).result.should.eql([
+      assert.deepEqual(layouts('This is content', 'abc', obj).result, [
         'blah above',
         'This is content',
         'This is content',
@@ -185,7 +245,7 @@ describe('.layouts():', function() {
     });
 
     it('should replace the `{%= body %}` tag with content.', function() {
-      layouts('This is content', 'aaa', stack).result.should.eql([
+      assert.deepEqual(layouts('This is content', 'aaa', stack).result, [
         'default above',
         'ccc above',
         'bbb above',
@@ -199,7 +259,7 @@ describe('.layouts():', function() {
     });
 
     it('should not replace the `{%= body %}` tag when no content is passed.', function() {
-      layouts(stack.aaa.content, 'bbb', stack).result.should.eql([
+      assert.deepEqual(layouts(stack.aaa.content, 'bbb', stack).result, [
         'default above',
         'ccc above',
         'bbb above',
@@ -237,7 +297,7 @@ describe('.layouts():', function() {
     };
 
     it('should use a custom contentTag', function() {
-      layouts(stack2.aaa.content, 'bbb', stack2, {contentTag: 'foo'}).result.should.eql([
+      assert.deepEqual(layouts(stack2.aaa.content, 'bbb', stack2, {contentTag: 'foo'}).result, [
         'default above',
         'ccc above',
         'bbb above',
@@ -251,7 +311,7 @@ describe('.layouts():', function() {
     });
 
     it('should use custom delimiters defined as an array', function() {
-      layouts(stack3.aaa.content, 'bbb', stack3, {layoutDelims: ['{{', '}}']}).result.should.eql([
+      assert.deepEqual(layouts(stack3.aaa.content, 'bbb', stack3, {layoutDelims: ['{{', '}}']}).result, [
         'default above',
         'ccc above',
         'bbb above',
@@ -265,7 +325,7 @@ describe('.layouts():', function() {
     });
 
     it('should use custom delimiters defined as a string', function() {
-      layouts(stack3.aaa.content, 'bbb', stack3, {layoutDelims: '{{([\\s\\S]+?)}}'}).result.should.eql([
+      assert.deepEqual(layouts(stack3.aaa.content, 'bbb', stack3, {layoutDelims: '{{([\\s\\S]+?)}}'}).result, [
         'default above',
         'ccc above',
         'bbb above',
@@ -279,7 +339,7 @@ describe('.layouts():', function() {
     });
 
     it('should use custom delimiters defined as a regex', function() {
-      layouts(stack3.aaa.content, 'bbb', stack3, {layoutDelims: /\{{([\s\S]+?)}}/}).result.should.eql([
+      assert.deepEqual(layouts(stack3.aaa.content, 'bbb', stack3, {layoutDelims: /\{{([\s\S]+?)}}/}).result, [
         'default above',
         'ccc above',
         'bbb above',
@@ -294,16 +354,16 @@ describe('.layouts():', function() {
 
     it('should use default delimiters', function() {
       var obj = {abc: {content: '{%= body %}[[body]]{%body%}{% body %}<%body%>'}};
-      layouts('INNER', 'abc', obj).result.should.eql('{%= body %}[[body]]{%body%}INNER<%body%>');
+      assert.deepEqual(layouts('INNER', 'abc', obj).result, '{%= body %}[[body]]{%body%}INNER<%body%>');
     });
 
     it('should use custom delimiters', function() {
       var obj = {abc: {content: '{%= body %}[[body]]{%body%}{% body %}<%body%>'}};
-      layouts('INNER', 'abc', obj, {layoutDelims: ['<%', '%>']}).result.should.eql('{%= body %}[[body]]{%body%}{% body %}INNER');
+      assert.deepEqual(layouts('INNER', 'abc', obj, {layoutDelims: ['<%', '%>']}).result, '{%= body %}[[body]]{%body%}{% body %}INNER');
     });
 
     it('should use custom delimiters and contentTag', function() {
-      layouts(stack4.aaa.content, 'bbb', stack4, {contentTag: 'foo', layoutDelims: ['{{', '}}']}).result.should.eql([
+      assert.deepEqual(layouts(stack4.aaa.content, 'bbb', stack4, {contentTag: 'foo', layoutDelims: ['{{', '}}']}).result, [
         'default above',
         'ccc above',
         'bbb above',
@@ -320,7 +380,7 @@ describe('.layouts():', function() {
   describe('layout delimiters', function() {
     it('should apply a layout to the given string.', function() {
       var obj = {blah: {content: 'blah above\n{% body %}\nblah below'}};
-      layouts('This is content', 'blah', obj).result.should.eql([
+      assert.deepEqual(layouts('This is content', 'blah', obj).result, [
         'blah above',
         'This is content',
         'blah below'
@@ -358,16 +418,18 @@ describe('.layouts():', function() {
     it('should return an object with the layout history.', function() {
       var obj = {blah: {content: 'blah above\n{% body %}\nblah below'}};
       var actual = layouts('This is content', 'blah', obj);
-      actual.should.have.properties(['history', 'options', 'result']);
-      actual.history.should.be.an.array;
+      assert(actual.hasOwnProperty('history'));
+      assert(actual.hasOwnProperty('options'));
+      assert(actual.hasOwnProperty('result'));
+      assert(Array.isArray(actual.history));
     });
 
     it('should push all layouts onto the stack:', function() {
       var actual = layouts('This is content', 'aaa', stack, function(ele, res) {
         res.scripts = _.union([], res.scripts, ele.layout.data.scripts || []);
       });
-      actual.should.have.property('scripts');
-      actual.scripts.should.eql(['aaa.js', 'bbb.js', 'ccc.js', 'index.js']);
+      assert(actual.hasOwnProperty('scripts'));
+      assert.deepEqual(actual.scripts, ['aaa.js', 'bbb.js', 'ccc.js', 'index.js']);
     });
   });
 });
@@ -381,7 +443,7 @@ describe('buffers:', function() {
     var buffer = new Buffer('This is content');
     var actual = layouts(buffer, 'abc', obj);
 
-    actual.result.should.eql([
+    assert.deepEqual(actual.result, [
       'blah above',
       'This is content',
       'blah below'
@@ -434,7 +496,7 @@ describe('gulp / vinyl:', function() {
   }
 
   it('should replace the `{%= body %}` tag with content.', function() {
-    layouts('This is content', 'aaa', vinylize(stack)).result.should.eql([
+    assert.deepEqual(layouts('This is content', 'aaa', vinylize(stack)).result, [
       'default above',
       'ccc above',
       'bbb above',

@@ -37,7 +37,6 @@
     "gulp-mocha": "^2.2.0",
     "lodash": "^4.13.1",
     "mocha": "^2.5.3",
-    "should": "^9.0.2",
     "to-vinyl": "^0.2.0"
   },
   "keywords": [

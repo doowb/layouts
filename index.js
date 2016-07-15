@@ -1,6 +1,5 @@
 'use strict';
 
-var path = require('path');
 var utils = require('./utils');
 
 /**
@@ -253,7 +252,6 @@ function matchDelims(re, str) {
   }
   return types[ch](str);
 }
-
 
 /**
  * Return true if the given value is a buffer

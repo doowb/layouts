@@ -58,8 +58,9 @@ describe('when the body tag is not found:', function() {
   });
 
   it('should throw an error when custom delims are an array:', function(cb) {
+    var obj;
     try {
-      var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
+      obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
       layouts('This is content', 'abc', obj, {layoutDelims: ['{%', '%}']});
       cb(new Error('expected an error'));
       return;
@@ -68,7 +69,7 @@ describe('when the body tag is not found:', function() {
     }
 
     try {
-      var obj = {abc: {content: 'blah above\n{%= ody %}\nblah below'}};
+      obj = {abc: {content: 'blah above\n{%= ody %}\nblah below'}};
       layouts('This is content', 'abc', obj, {layoutDelims: ['{%=', '%}']});
       cb(new Error('expected an error'));
       return;
@@ -77,7 +78,7 @@ describe('when the body tag is not found:', function() {
     }
 
     try {
-      var obj = {abc: {content: 'blah above\n{%- ody %}\nblah below'}};
+      obj = {abc: {content: 'blah above\n{%- ody %}\nblah below'}};
       layouts('This is content', 'abc', obj, {layoutDelims: ['{%-', '%}']});
       cb(new Error('expected an error'));
       return;
@@ -86,7 +87,7 @@ describe('when the body tag is not found:', function() {
     }
 
     try {
-      var obj = {abc: {content: 'blah above\n<% ody %>\nblah below'}};
+      obj = {abc: {content: 'blah above\n<% ody %>\nblah below'}};
       layouts('This is content', 'abc', obj, {layoutDelims: ['<%', '%>']});
       cb(new Error('expected an error'));
       return;
@@ -95,7 +96,7 @@ describe('when the body tag is not found:', function() {
     }
 
     try {
-      var obj = {abc: {content: 'blah above\n<%= ody %>\nblah below'}};
+      obj = {abc: {content: 'blah above\n<%= ody %>\nblah below'}};
       layouts('This is content', 'abc', obj, {layoutDelims: ['<%=', '%>']});
       cb(new Error('expected an error'));
       return;
@@ -104,7 +105,7 @@ describe('when the body tag is not found:', function() {
     }
 
     try {
-      var obj = {abc: {content: 'blah above\n<%- ody %>\nblah below'}};
+      obj = {abc: {content: 'blah above\n<%- ody %>\nblah below'}};
       layouts('This is content', 'abc', obj, {layoutDelims: ['<%-', '%>']});
       cb(new Error('expected an error'));
       return;

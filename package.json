@@ -87,6 +87,14 @@
     "wrap"
   ],
   "verb": {
+    "toc": true,
+    "layout": "default",
+    "tasks": [
+      "readme"
+    ],
+    "plugins": [
+      "gulp-format-md"
+    ],
     "related": {
       "list": [
         "assemble",
@@ -98,12 +106,13 @@
         "vinyl"
       ]
     },
-    "plugins": [
-      "gulp-format-md"
-    ],
-    "layout": "default",
     "reflinks": [
-      "vinyl"
-    ]
+      "vinyl",
+      "verb-generate-readme",
+      "verb"
+    ],
+    "lint": {
+      "reflinks": true
+    }
   }
 }

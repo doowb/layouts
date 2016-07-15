@@ -83,7 +83,7 @@ function renderLayouts(str, name, layouts, opts, fn) {
     var re = makeDelimiterRegex(delims, tag);
 
     // ensure that content is a string
-    var content = String(layout.content);
+    var content = (layout.content || layout.contents).toString();
     if (!re.test(content)) {
       throw error(re, name, tag);
     }

@@ -131,7 +131,7 @@ Results in something like:
 
 By default, `{% body %}` is used as the placeholder (insertion point) for content, but this can easily be customized with the following options:
 
-* `layoutDelims`: the delimiters to use. This can be a regex, like `/\{{([^}]+)\}}/`, or an array of delimiter strings, like `['{{', '}}']`
+* `layoutDelims`: the delimiters to use. This can be a regex, like `/{{([^}]+)\}}/`, or an array of delimiter strings, like `['{{', '}}']`
 * `contentTag`: the name of the content placeholder tag _(defaults to **body**)_.
 
 ## API
@@ -170,13 +170,13 @@ renderLayouts(string, layoutName, layouts, options, fn);
 
 ### Related projects
 
-* [assemble](https://www.npmjs.com/package/assemble): Get the rocks out of your socks! Assemble makes you fast at creating web projects… [more](https://github.com/assemble/assemble) | [homepage](https://github.com/assemble/assemble "Get the rocks out of your socks! Assemble makes you fast at creating web projects. Assemble is used by thousands of projects for rapid prototyping, creating themes, scaffolds, boilerplates, e-books, UI components, API documentation, blogs, building websit")
-* [gulp](https://www.npmjs.com/package/gulp): The streaming build system | [homepage](http://gulpjs.com "The streaming build system")
-* [handlebars-layouts](https://www.npmjs.com/package/handlebars-layouts): Handlebars helpers which implement layout blocks similar to Jade, Jinja, Swig, and Twig. | [homepage](https://github.com/shannonmoeller/handlebars-layouts "Handlebars helpers which implement layout blocks similar to Jade, Jinja, Swig, and Twig.")
-* [inject-snippet](https://www.npmjs.com/package/inject-snippet): Inject a snippet of code or content into a string. | [homepage](https://github.com/jonschlinkert/inject-snippet "Inject a snippet of code or content into a string.")
-* [templates](https://www.npmjs.com/package/templates): System for creating and managing template collections, and rendering templates with any node.js template engine… [more](https://github.com/jonschlinkert/templates) | [homepage](https://github.com/jonschlinkert/templates "System for creating and managing template collections, and rendering templates with any node.js template engine. Can be used as the basis for creating a static site generator or blog framework.")
-* [verb](https://www.npmjs.com/package/verb): Documentation generator for GitHub projects. Verb is extremely powerful, easy to use, and is used… [more](https://github.com/verbose/verb) | [homepage](https://github.com/verbose/verb "Documentation generator for GitHub projects. Verb is extremely powerful, easy to use, and is used on hundreds of projects of all sizes to generate everything from API docs to readmes.")
-* [vinyl](https://www.npmjs.com/package/vinyl): A virtual file format | [homepage](http://github.com/gulpjs/vinyl "A virtual file format")
+* [assemble](https://www.npmjs.com/package/assemble): Get the rocks out of your socks! Assemble makes you fast at creating web projects… [more](https://github.com/assemble/assemble) | [homepage](https://github.com/assemble/assemble)
+* [gulp](https://www.npmjs.com/package/gulp): The streaming build system | [homepage](http://gulpjs.com)
+* [handlebars-layouts](https://www.npmjs.com/package/handlebars-layouts): Handlebars helpers which implement layout blocks similar to Jade, Jinja, Swig, and Twig. | [homepage](https://github.com/shannonmoeller/handlebars-layouts)
+* [inject-snippet](https://www.npmjs.com/package/inject-snippet): Inject a snippet of code or content into a string. | [homepage](https://github.com/jonschlinkert/inject-snippet)
+* [templates](https://www.npmjs.com/package/templates): System for creating and managing template collections, and rendering templates with any node.js template engine… [more](https://github.com/jonschlinkert/templates) | [homepage](https://github.com/jonschlinkert/templates)
+* [verb](https://www.npmjs.com/package/verb): Documentation generator for GitHub projects. Verb is extremely powerful, easy to use, and is used… [more](https://github.com/verbose/verb) | [homepage](https://github.com/verbose/verb)
+* [vinyl](https://www.npmjs.com/package/vinyl): A virtual file format | [homepage](http://github.com/gulpjs/vinyl)
 
 ### Contributing
 

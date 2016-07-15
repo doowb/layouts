@@ -157,6 +157,11 @@ renderLayouts(string, layoutName, layouts, options, fn);
 
 ## History
 
+**v0.12.0**
+
+* _BREAKING CHANGE_ change `options.tag` to `options.contentTag`
+* update tests to use `assert` instead of `should`
+
 **v0.11.0**
 
 * All view objects must now have a `path` property, following [vinyl](http://github.com/gulpjs/vinyl) conventions.

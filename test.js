@@ -237,8 +237,8 @@ describe('.layouts():', function() {
       ddd: {content: 'ddd above\n{{ foo }}\nddd below', locals: {title: 'Baz'} }
     };
 
-    it('should use a custom tag', function() {
-      layouts(stack2.aaa.content, 'bbb', stack2, {tag: 'foo'}).result.should.eql([
+    it('should use a custom contentTag', function() {
+      layouts(stack2.aaa.content, 'bbb', stack2, {contentTag: 'foo'}).result.should.eql([
         'default above',
         'ccc above',
         'bbb above',
@@ -303,8 +303,8 @@ describe('.layouts():', function() {
       layouts('INNER', 'abc', obj, {layoutDelims: ['<%', '%>']}).result.should.eql('{%= body %}[[body]]{%body%}{% body %}INNER');
     });
 
-    it('should use custom delimiters and tag', function() {
-      layouts(stack4.aaa.content, 'bbb', stack4, {tag: 'foo', layoutDelims: ['{{', '}}']}).result.should.eql([
+    it('should use custom delimiters and contentTag', function() {
+      layouts(stack4.aaa.content, 'bbb', stack4, {contentTag: 'foo', layoutDelims: ['{{', '}}']}).result.should.eql([
         'default above',
         'ccc above',
         'bbb above',

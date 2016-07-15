@@ -28,7 +28,7 @@ var cache = {};
  * @param  {String} `string` The string to wrap with a layout.
  * @param  {String} `layoutName` The name (key) of the layout object to use.
  * @param  {Object} `layouts` Object of layout objects.
- * @param  {Object} `options` Optionally define a `defaultLayout` (string), pass custom delimiters (`layoutDelims`) to use as the placeholder for the content insertion point, or change the name of the placeholder tag with the `tag` option.
+ * @param  {Object} `options` Optionally define a `defaultLayout` (string), pass custom delimiters (`layoutDelims`) to use as the placeholder for the content insertion point, or change the name of the placeholder tag with the `contentTag` option.
  * @param  {Function} `fn` Optionally pass a function to modify the context as each layout is applied.
  * @return {String} Returns the original string wrapped with one or more layouts.
  * @api public
@@ -69,7 +69,7 @@ function renderLayouts(str, name, layouts, opts, fn) {
     // `data` is passed to `wrapLayout` to resolve layouts
     // to the values on the data object.
     var data = {};
-    var tag = opts.tag || 'body';
+    var tag = opts.contentTag || 'body';
     data[tag] = str;
 
     // get info about the current layout

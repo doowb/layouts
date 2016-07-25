@@ -1,132 +1,107 @@
 'use strict';
 
+var isFalsey = require('falsey');
+var getFile = require('get-view');
+var delims = require('delimiter-regex');
+var extend = require('extend-shallow');
+var isObject = require('isobject');
 var utils = require('./utils');
+var regexCache = {};
 
 /**
- * Expose `layouts`
- */
-
-module.exports = renderLayouts;
-
-/**
- * Cache compiled delimiter regex.
- *
- * If delimiters need to be generated, this ensures that
- * runtime compilation only happens once.
- */
-
-var cache = {};
-
-/**
- * Wrap one or more layouts around `string`.
+ * Apply a layout from the `layouts` object to `file.contents`. Layouts will be
+ * recursively applied until a layout is not defined by the returned file.
  *
  * ```js
- * renderLayouts(string, layoutName, layouts, options, fn);
- * ```
+ * var applyLayout = require('layouts');
+ * var layouts = {};
+ * layouts.default = new File({path: 'default', contents: new Buffer('foo\n{% body %}\nbar')}),
+ * layouts.other = new File({path: 'other', contents: new Buffer('baz\n{% body %}\nqux')});
+ * layouts.other.layout = 'default';
  *
- * @param  {String} `string` The string to wrap with a layout.
- * @param  {String} `layoutName` The name (key) of the layout object to use.
- * @param  {Object} `layouts` Object of layout objects.
- * @param  {Object} `options` Optionally define a `defaultLayout` (string), pass custom delimiters (`layoutDelims`) to use as the placeholder for the content insertion point, or change the name of the placeholder tag with the `contentTag` option.
- * @param  {Function} `fn` Optionally pass a function to modify the context as each layout is applied.
- * @return {String} Returns the original string wrapped with one or more layouts.
+ * var file = new File({path: 'whatever', contents: new Buffer('inner')});
+ * file.layout = 'other';
+ *
+ * applyLayouts(file, layouts);
+ * console.log(file.contents.toString());
+ * // foo
+ * // bar
+ * // inner
+ * // baz
+ * // qux
+ * ```
+ * @param {Object} `file` File object. This can be a plain object or [vinyl][] file.
+ * @param {Object} `layouts` Object of file objects to use as "layouts".
+ * @param {Object} `options`
+ * @return {Object} Returns the original file object with layout(s) applied.
  * @api public
  */
 
-function renderLayouts(str, name, layouts, opts, fn) {
-  if (isBuffer(str)) {
-    str = String(str);
+module.exports = function applyLayouts(file, layouts, options) {
+  if (!isObject(file)) {
+    throw new TypeError('expected file to be an object');
+  }
+  if (typeof file.path !== 'string') {
+    throw new TypeError('expected file.path to be a string');
   }
 
-  if (typeof str !== 'string') {
-    throw new TypeError('expected content to be a string.');
-  }
-  if (typeof name !== 'string') {
-    throw new TypeError('expected layout name to be a string.');
-  }
-
-  if (typeof opts === 'function') {
-    fn = opts;
-    opts = {};
+  var opts = extend({}, options);
+  var name = getLayoutName(file, opts.defaultLayout);
+  if (name === false) {
+    return file;
   }
 
-  opts = opts || {};
-  var layout = {};
-  var depth = 0;
+  if (typeof name === 'undefined') {
+    throw new TypeError('expected layout name to be a string');
+  }
+
+  opts.tagname = opts.tagname || 'body';
+  var regex = createRegex(opts);
+  var layout;
   var prev;
 
-  // `view` is the object we'll use to store the result
-  var view = {options: {}, history: []};
-  name = assertLayout(name, opts.defaultLayout);
-
   // recursively resolve layouts
-  while (name && (prev !== name) && (layout = utils.getView(name, layouts))) {
+  while (name && (prev !== name) && (layout = getFile(name, layouts))) {
     prev = name;
-
-    var delims = opts.layoutDelims;
-
-    // `data` is passed to `wrapLayout` to resolve layouts
-    // to the values on the data object.
-    var data = {};
-    var tag = opts.contentTag || 'body';
-    data[tag] = str;
-
-    // get info about the current layout
-    var obj = new Layout({
-      name: name,
-      layout: layout,
-      before: str,
-      depth: depth++
-    });
-
-    // get the delimiter regex
-    var re = makeDelimiterRegex(delims, tag);
-
-    // ensure that content is a string
-    var content = (layout.content || layout.contents).toString();
-    if (!re.test(content)) {
-      throw error(re, name, tag);
-    }
-
-    // inject the string into the layout
-    str = wrapLayout(content, data, re, name, tag);
-    obj.after = str;
-
-    // if a callback is passed, allow it modify the result
-    if (typeof fn === 'function') {
-      fn(obj, view, depth);
-    }
-
-    // push info about the layout onto `history`
-    view.history.push(obj);
-
-    // should we recurse again?
-    // does the `layout` specify another layout?
-    name = assertLayout(layout.layout, opts.defaultLayout);
+    name = resolveLayout(file, layout, opts, regex, name);
   }
 
   if (typeof name === 'string' && prev !== name) {
     throw new Error('could not find layout "' + name + '"');
   }
 
-  view.options = opts;
-  view.result = str;
-  return view;
+  file.contents = new Buffer(file.content);
+  return file;
+};
+
+/**
+ * Resolve the layout to use for the current file.
+ */
+
+function resolveLayout(file, layout, options, regex, name) {
+  var val = toString(layout, options);
+
+  if (!regex.test(val)) {
+    var delims = utils.matchDelims(regex, options.tagname);
+    throw new Error(`cannot find tag "${delims}" in "${name}"`);
+  }
+
+  if (!layout.contents) {
+    layout.contents = new Buffer(layout.content);
+  }
+
+  var str = toString(file, options);
+  file.content = val.replace(regex, str);
+  return getLayoutName(layout, options.defaultLayout);
 }
 
 /**
- * Create a new layout in the layout stack.
- *
- * @param {Object} `view` The layout view object
- * @param {Number} `depth` Current stack depth
+ * Get the contents string from the file object
  */
 
-function Layout(view) {
-  this.layout = view.layout;
-  this.layout.name = view.name;
-  this.before = view.before;
-  this.depth = view.depth;
-  return this;
+function toString(file, options) {
+  var str = (file.content || file.contents || '').toString();
+  return options.trim ? str.trim() : str;
 }
 
 /**
@@ -141,125 +116,47 @@ function Layout(view) {
  * @api private
  */
 
-function assertLayout(value, defaultLayout) {
-  if (value === false || (value && utils.isFalsey(value))) {
-    return null;
-  } else if (!value || value === true) {
-    return defaultLayout || null;
+function getLayoutName(file, defaultLayout) {
+  var name = file.layout;
+  if (typeof name === 'undefined' || name === true) {
+    return defaultLayout;
+  } else if (name === false || name === null || name === 'null' || name === '' || (name && isFalsey(name))) {
+    return false;
   } else {
-    return value;
+    return name;
   }
 }
 
 /**
- * Resolve template strings to the values on the given
- * `data` object.
+ * Create the regex to use for matching
  */
 
-function wrapLayout(str, data, re, name, tag) {
-  return str.replace(re, function(_, tagName) {
-    var m = data[tagName.trim()];
-    if (typeof m === 'undefined') {
-      throw error(re, name, tag);
-    }
-    return m;
-  });
-}
-
-/**
- * Make delimiter regex.
- *
- * @param  {Sring|Array|RegExp} `syntax`
- * @return {RegExp}
- */
-
-function makeDelimiterRegex(syntax, tag) {
-  if (!syntax) {
-    syntax = makeTag(tag, ['{%', '%}']);
+function createRegex(options) {
+  var opts = extend({}, options);
+  var layoutDelims = options.delims || options.layoutDelims;
+  var key = options.tagname;
+  if (layoutDelims) key += layoutDelims;
+  var regex;
+  if (regexCache.hasOwnProperty(key)) {
+    return regexCache[key];
   }
-  if (syntax instanceof RegExp) {
-    return syntax;
+  if (layoutDelims instanceof RegExp) {
+    regexCache[key] = layoutDelims;
+    return layoutDelims;
   }
-  var name = syntax + '';
-  if (cache.hasOwnProperty(name)) {
-    return cache[name];
+  if (Array.isArray(layoutDelims)) {
+    opts.close = layoutDelims[1];
+    opts.open = layoutDelims[0];
   }
-  if (typeof syntax === 'string') {
-    return new RegExp(syntax, 'g');
+  if (typeof layoutDelims === 'string') {
+    regex = new RegExp(layoutDelims);
+    regexCache[key] = regex;
+    return regex;
   }
-  return (cache[name] = utils.delims(syntax));
-}
-
-/**
- * Cast `val` to a string.
- */
-
-function makeTag(val, delims) {
-  return delims[0].trim()
-    + ' ('
-    + String(val).trim()
-    + ') '
-    + delims[1].trim();
-}
-
-/**
- * Format an error message
- */
-
-function error(re, name, tag) {
-  var delims = matchDelims(re, tag);
-  return new Error('cannot find "' + delims + '" in "' + name + '"');
-}
-
-/**
- * Only used if an error is thrown. Attempts to recreate
- * delimiters for the error message.
- */
-
-var types = {
-  '{%=': function(str) {
-    return '{%= ' + str + ' %}';
-  },
-  '{%-': function(str) {
-    return '{%- ' + str + ' %}';
-  },
-  '{%': function(str) {
-    return '{% ' + str + ' %}';
-  },
-  '{{': function(str) {
-    return '{{ ' + str + ' }}';
-  },
-  '<%': function(str) {
-    return '<% ' + str + ' %>';
-  },
-  '<%=': function(str) {
-    return '<%= ' + str + ' %>';
-  },
-  '<%-': function(str) {
-    return '<%- ' + str + ' %>';
-  }
-};
-
-function matchDelims(re, str) {
-  var ch = re.source.slice(0, 4);
-  if (/[\\]/.test(ch.charAt(0))) {
-    ch = ch.slice(1);
-  }
-  if (!/[-=]/.test(ch.charAt(2))) {
-    ch = ch.slice(0, 2);
-  } else {
-    ch = ch.slice(0, 3);
-  }
-  return types[ch](str);
-}
-
-/**
- * Return true if the given value is a buffer
- */
-
-function isBuffer(val) {
-  if (val && val.constructor && typeof val.constructor.isBuffer === 'function') {
-    return val.constructor.isBuffer(val);
-  }
-  return false;
+  opts.flags = 'g';
+  opts.close = opts.close || '%}';
+  opts.open = opts.open || '{%';
+  regex = delims(opts);
+  regexCache[key] = regex;
+  return regex;
 }

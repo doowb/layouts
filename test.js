@@ -1,16 +1,10 @@
-/*!
- * layouts <https://github.com/doowb/layouts>
- *
- * Copyright (c) 2014-2015, Brian Woodward.
- * Licensed under the MIT License.
- */
 'use strict';
 
-/* deps:mocha */
+require('mocha');
+var union = require('arr-union');
 var toVinyl = require('to-vinyl');
 var assert = require('assert');
 var layouts = require('./');
-var _ = require('lodash');
 
 describe('errors:', function() {
   it('should throw an error when invalid arguments are passed:', function(cb) {
@@ -18,28 +12,37 @@ describe('errors:', function() {
       layouts();
       cb(new Error('expected an error'));
     } catch (err) {
-      assert.equal(err.message, 'expected content to be a string.');
+      assert.equal(err.message, 'expected file to be an object');
       cb();
     }
   });
 
-  it('should apply a layout to the given string.', function(cb) {
+  it('should throw an error when file.path is not a string', function(cb) {
     try {
-      layouts('This is content', {});
+      layouts({content: 'This is content'}, {});
       cb(new Error('expected an error'));
     } catch (err) {
-      assert.equal(err.message, 'expected layout name to be a string.');
+      assert.equal(err.message, 'expected file.path to be a string');
       cb();
     }
   });
 
-  it('should throw an error when the tag is not defined.', function(cb) {
-    var obj = {blah: {content: 'foo'}};
+  it('should throw an error when layout name is not defined', function(cb) {
     try {
-      layouts('This is content', 'blah', obj);
+      layouts({content: 'This is content', path: 'foo'}, {});
       cb(new Error('expected an error'));
     } catch (err) {
-      assert.equal(err.message, 'cannot find "{% body %}" in "blah"');
+      assert.equal(err.message, 'expected layout name to be a string');
+      cb();
+    }
+  });
+
+  it('should throw an error when the template does not exist', function(cb) {
+    try {
+      layouts({content: 'This is content', layout: 'blah', path: 'foo'}, {blah: {content: 'foo'}});
+      cb(new Error('expected an error'));
+    } catch (err) {
+      assert.equal(err.message, 'cannot find tag "{% body %}" in "blah"');
       cb();
     }
   });
@@ -48,115 +51,127 @@ describe('errors:', function() {
 describe('when the body tag is not found:', function() {
   it('should throw an error with default delims:', function(cb) {
     try {
-      var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
-      layouts('This is content', 'abc', obj);
+      var obj = {abc: {content: 'blah above\n{% foo %}\nblah below'}};
+      var file = {content: 'This is content', layout: 'abc', path: 'foo'};
+      layouts(file, obj);
       cb(new Error('expected an error'));
     } catch (err) {
-      assert.equal(err.message, 'cannot find "{% body %}" in "abc"');
+      assert.equal(err.message, 'cannot find tag "{% body %}" in "abc"');
       cb();
     }
   });
 
-  it('should throw an error when custom delims are an array:', function(cb) {
-    var obj;
+  it('should throw an error when custom tag is not found:', function(cb) {
     try {
-      obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
-      layouts('This is content', 'abc', obj, {layoutDelims: ['{%', '%}']});
+      var obj = {abc: {content: 'blah above\n{% bar %}\nblah below', path: 'abc'}};
+      var file = {content: 'This is content', layout: 'abc', path: 'foo'};
+      layouts(file, obj, {layoutDelims: ['{%', '%}']});
       cb(new Error('expected an error'));
       return;
     } catch (err) {
-      assert.equal(err.message, 'cannot find "{% body %}" in "abc"');
+      assert.equal(err.message, 'cannot find tag "{% body %}" in "abc"');
     }
 
     try {
-      obj = {abc: {content: 'blah above\n{%= ody %}\nblah below'}};
-      layouts('This is content', 'abc', obj, {layoutDelims: ['{%=', '%}']});
+      obj = {abc: {content: 'blah above\n{%= bar %}\nblah below'}};
+      var file = {content: 'This is content', layout: 'abc', path: 'foo'};
+      layouts(file, obj, {layoutDelims: ['{%=', '%}']});
       cb(new Error('expected an error'));
       return;
     } catch (err) {
-      assert.equal(err.message, 'cannot find "{%= body %}" in "abc"');
+      assert.equal(err.message, 'cannot find tag "{%= body %}" in "abc"');
     }
 
     try {
       obj = {abc: {content: 'blah above\n{%- ody %}\nblah below'}};
-      layouts('This is content', 'abc', obj, {layoutDelims: ['{%-', '%}']});
+      var file = {content: 'This is content', layout: 'abc', path: 'foo'};
+      layouts(file, obj, {layoutDelims: ['{%-', '%}']});
       cb(new Error('expected an error'));
       return;
     } catch (err) {
-      assert.equal(err.message, 'cannot find "{%- body %}" in "abc"');
+      assert.equal(err.message, 'cannot find tag "{%- body %}" in "abc"');
     }
 
     try {
       obj = {abc: {content: 'blah above\n<% ody %>\nblah below'}};
-      layouts('This is content', 'abc', obj, {layoutDelims: ['<%', '%>']});
+      var file = {content: 'This is content', layout: 'abc', path: 'foo'};
+      layouts(file, obj, {layoutDelims: ['<%', '%>']});
       cb(new Error('expected an error'));
       return;
     } catch (err) {
-      assert.equal(err.message, 'cannot find "<% body %>" in "abc"');
+      assert.equal(err.message, 'cannot find tag "<% body %>" in "abc"');
     }
 
     try {
       obj = {abc: {content: 'blah above\n<%= ody %>\nblah below'}};
-      layouts('This is content', 'abc', obj, {layoutDelims: ['<%=', '%>']});
+      var file = {content: 'This is content', layout: 'abc', path: 'foo'};
+      layouts(file, obj, {layoutDelims: ['<%=', '%>']});
       cb(new Error('expected an error'));
       return;
     } catch (err) {
-      assert.equal(err.message, 'cannot find "<%= body %>" in "abc"');
+      assert.equal(err.message, 'cannot find tag "<%= body %>" in "abc"');
     }
 
     try {
       obj = {abc: {content: 'blah above\n<%- ody %>\nblah below'}};
-      layouts('This is content', 'abc', obj, {layoutDelims: ['<%-', '%>']});
+      var file = {content: 'This is content', layout: 'abc', path: 'foo'};
+      layouts(file, obj, {layoutDelims: ['<%-', '%>']});
       cb(new Error('expected an error'));
       return;
     } catch (err) {
-      assert.equal(err.message, 'cannot find "<%- body %>" in "abc"');
+      assert.equal(err.message, 'cannot find tag "<%- body %>" in "abc"');
     }
     cb();
   });
 
-  it('should throw an error when custom delims are a regex:', function(cb) {
-    try {
-      var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
-      layouts('This is content', 'abc', obj, {layoutDelims: /\{%([\s\S]+?)%}/g});
-      cb(new Error('expected an error'));
-    } catch (err) {
-      assert.equal(err.message, 'cannot find "{% body %}" in "abc"');
-      cb();
-    }
-  });
+  describe('custom delimiters', function() {
+    it('should throw an error when custom delims are an array:', function(cb) {
+      try {
+        var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
+        var file = {content: 'This is content', layout: 'abc', path: 'foo'};
+        layouts(file, obj, {layoutDelims: ['{{', '}}']});
+        cb(new Error('expected an error'));
+      } catch (err) {
+        assert.equal(err.message, 'cannot find tag "{{ body }}" in "abc"');
+        cb();
+      }
+    });
 
-  it('should throw an error when custom delims are a string:', function(cb) {
-    try {
-      var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
-      layouts('This is content', 'abc', obj, {layoutDelims: '{{([\\s\\S]+?)}}'});
-      cb(new Error('expected an error'));
-    } catch (err) {
-      assert.equal(err.message, 'cannot find "{{ body }}" in "abc"');
-      cb();
-    }
-  });
+    it('should throw an error when tag is missing with custom regex', function(cb) {
+      try {
+        var obj = {abc: {content: 'blah above\n{{foo}}\nblah below'}};
+        var file = {content: 'This is content', layout: 'abc', path: 'foo'};
+        layouts(file, obj, {layoutDelims: /\{%([\s\S]+?)%}/g});
+        cb(new Error('expected an error'));
+      } catch (err) {
+        assert.equal(err.message, 'cannot find tag "{% body %}" in "abc"');
+        cb();
+      }
+    });
 
-  it('should throw an error when custom delims are an array:', function(cb) {
-    try {
-      var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
-      layouts('This is content', 'abc', obj, {layoutDelims: ['{{', '}}']});
-      cb(new Error('expected an error'));
-    } catch (err) {
-      assert.equal(err.message, 'cannot find "{{ body }}" in "abc"');
-      cb();
-    }
-  });
+    it('should throw an error when custom delims are a string:', function(cb) {
+      try {
+        var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
+        var file = {content: 'This is content', layout: 'abc', path: 'foo'};
+        layouts(file, obj, {layoutDelims: '{{([\\s\\S]+?)}}'});
+        cb(new Error('expected an error'));
+      } catch (err) {
+        assert.equal(err.message, 'cannot find tag "{{ body }}" in "abc"');
+        cb();
+      }
+    });
 
-  it('should throw an error when a layout is not applied.', function(cb) {
-    try {
-      var obj = {abc: {path: 'blah', content: 'blah above\n{% body %}\nblah below'}};
-      layouts('This is content', 'foobar', obj);
-      cb(new Error('expected an error'));
-    } catch (err) {
-      assert.equal(err.message, 'could not find layout "foobar"');
-      cb();
-    }
+    it('should throw an error when a layout is not applied.', function(cb) {
+      try {
+        var obj = {abc: {path: 'blah', content: 'blah above\n{% body %}\nblah below'}};
+        var file = {content: 'This is content', layout: 'foobar', path: 'foo'};
+        layouts(file, obj);
+        cb(new Error('expected an error'));
+      } catch (err) {
+        assert.equal(err.message, 'could not find layout "foobar"');
+        cb();
+      }
+    });
   });
 });
 
@@ -194,7 +209,8 @@ describe('.layouts():', function() {
 
   it('should apply a layout to the given string.', function() {
     var obj = {abc: {content: 'blah above\n{% body %}\nblah below'}};
-    assert.deepEqual(layouts('This is content', 'abc', obj).result, [
+    var file = {content: 'This is content', layout: 'abc', path: 'foo'};
+    assert.deepEqual(layouts(file, obj).content, [
       'blah above',
       'This is content',
       'blah below'
@@ -202,19 +218,19 @@ describe('.layouts():', function() {
   });
 
   describe('when a defaultLayout is defined', function() {
-    it('should apply the default layout if the name is an empty string:', function() {
+    it('should not apply a layout if the name is an empty string:', function() {
       var obj = {abc: {content: 'blah above\n{% body %}\nblah below'}};
-      assert.deepEqual(layouts('This is content', '', obj, {defaultLayout: 'abc'}).result, [
-        'blah above',
-        'This is content',
-        'blah below'
+      var file = {content: 'This is content', layout: '', path: 'foo'};
+      assert.deepEqual(layouts(file, obj, {defaultLayout: 'abc'}).content, [
+        'This is content'
       ].join('\n'));
     });
 
-    it('should still throw an error if layout is specified and not found', function(cb) {
+    it('should throw an error if layout is specified and not found', function(cb) {
       try {
         var obj = {abc: {path: 'blah', content: 'blah above\n{% body %}\nblah below'}};
-        layouts('This is content', 'ffo', obj, {defaultLayout: 'abc'});
+        var file = {content: 'This is content', layout: 'ffo', path: 'foo'};
+        layouts(file, obj, {defaultLayout: 'abc'});
         cb(new Error('expected an error'));
       } catch (err) {
         assert.equal(err.message, 'could not find layout "ffo"');
@@ -225,19 +241,23 @@ describe('.layouts():', function() {
 
   it('should not apply a layout when the layout name is falsey', function() {
     var obj = {abc: {content: 'blah above\n{% body %}\nblah below'}};
-    assert.deepEqual(layouts('This is content', 'false', obj).result, [
-      'This is content'
-    ].join('\n'));
-
-    assert.deepEqual(layouts('This is content', 'nil', obj).result, [
-      'This is content'
-    ].join('\n'));
+    function createFile(name) {
+      return {content: 'This is content', layout: name, path: 'foo'};
+    }
+    assert.deepEqual(layouts(createFile('none'), obj).content, 'This is content');
+    assert.deepEqual(layouts(createFile('no'), obj).content, 'This is content');
+    assert.deepEqual(layouts(createFile(null), obj).content, 'This is content');
+    assert.deepEqual(layouts(createFile('null'), obj).content, 'This is content');
+    assert.deepEqual(layouts(createFile(false), obj).content, 'This is content');
+    assert.deepEqual(layouts(createFile('false'), obj).content, 'This is content');
+    assert.deepEqual(layouts(createFile('nil'), obj).content, 'This is content');
   });
 
   describe('apply layouts.', function() {
-    it('should wrap a string with a layout.', function() {
+    it('should support multiple tags', function() {
       var obj = {abc: {content: 'blah above\n{% body %}\n{% body %}\nblah below'}};
-      assert.deepEqual(layouts('This is content', 'abc', obj).result, [
+      var file = {content: 'This is content', layout: 'abc', path: 'foo'};
+      assert.deepEqual(layouts(file, obj).content, [
         'blah above',
         'This is content',
         'This is content',
@@ -246,7 +266,8 @@ describe('.layouts():', function() {
     });
 
     it('should replace the `{%= body %}` tag with content.', function() {
-      assert.deepEqual(layouts('This is content', 'aaa', stack).result, [
+      var file = {content: 'This is content', layout: 'aaa', path: 'foo'};
+      assert.deepEqual(layouts(file, stack).content, [
         'default above',
         'ccc above',
         'bbb above',
@@ -260,7 +281,8 @@ describe('.layouts():', function() {
     });
 
     it('should not replace the `{%= body %}` tag when no content is passed.', function() {
-      assert.deepEqual(layouts(stack.aaa.content, 'bbb', stack).result, [
+      var file = {content: stack.aaa.content, layout: 'bbb', path: 'foo'};
+      assert.deepEqual(layouts(file, stack).content, [
         'default above',
         'ccc above',
         'bbb above',
@@ -297,8 +319,9 @@ describe('.layouts():', function() {
       ddd: {content: 'ddd above\n{{ foo }}\nddd below', locals: {title: 'Baz'} }
     };
 
-    it('should use a custom contentTag', function() {
-      assert.deepEqual(layouts(stack2.aaa.content, 'bbb', stack2, {contentTag: 'foo'}).result, [
+    it('should use a custom tagname', function() {
+      var file = {content: stack2.aaa.content, layout: 'bbb', path: 'foo'};
+      assert.deepEqual(layouts(file, stack2, {tagname: 'foo'}).content, [
         'default above',
         'ccc above',
         'bbb above',
@@ -312,7 +335,8 @@ describe('.layouts():', function() {
     });
 
     it('should use custom delimiters defined as an array', function() {
-      assert.deepEqual(layouts(stack3.aaa.content, 'bbb', stack3, {layoutDelims: ['{{', '}}']}).result, [
+      var file = {content: stack3.aaa.content, layout: 'bbb', path: 'foo'};
+      assert.deepEqual(layouts(file, stack3, {layoutDelims: ['{{', '}}']}).content, [
         'default above',
         'ccc above',
         'bbb above',
@@ -326,7 +350,8 @@ describe('.layouts():', function() {
     });
 
     it('should use custom delimiters defined as a string', function() {
-      assert.deepEqual(layouts(stack3.aaa.content, 'bbb', stack3, {layoutDelims: '{{([\\s\\S]+?)}}'}).result, [
+      var file = {content: stack3.aaa.content, layout: 'bbb', path: 'foo'};
+      assert.deepEqual(layouts(file, stack3, {layoutDelims: '{{([\\s\\S]+?)}}'}).content, [
         'default above',
         'ccc above',
         'bbb above',
@@ -340,7 +365,8 @@ describe('.layouts():', function() {
     });
 
     it('should use custom delimiters defined as a regex', function() {
-      assert.deepEqual(layouts(stack3.aaa.content, 'bbb', stack3, {layoutDelims: /\{{([\s\S]+?)}}/}).result, [
+      var file = {content: stack3.aaa.content, layout: 'bbb', path: 'foo'};
+      assert.deepEqual(layouts(file, stack3, {layoutDelims: /\{{([\s\S]+?)}}/}).content, [
         'default above',
         'ccc above',
         'bbb above',
@@ -354,17 +380,20 @@ describe('.layouts():', function() {
     });
 
     it('should use default delimiters', function() {
-      var obj = {abc: {content: '{%= body %}[[body]]{%body%}{% body %}<%body%>'}};
-      assert.deepEqual(layouts('INNER', 'abc', obj).result, '{%= body %}[[body]]{%body%}INNER<%body%>');
+      var obj = {abc: {content: '{%= body %}[[body]]{%body%}{% body %}<%body%>', path: 'abc'}};
+      var file = {content: 'INNER', layout: 'abc', path: 'foo'};
+      assert.deepEqual(layouts(file, obj).content, '{%= body %}[[body]]{%body%}INNER<%body%>');
     });
 
     it('should use custom delimiters', function() {
-      var obj = {abc: {content: '{%= body %}[[body]]{%body%}{% body %}<%body%>'}};
-      assert.deepEqual(layouts('INNER', 'abc', obj, {layoutDelims: ['<%', '%>']}).result, '{%= body %}[[body]]{%body%}{% body %}INNER');
+      var obj = {abc: {content: '{%= body %}[[body]]{%body%}{% body %}<% body %>'}};
+      var file = {content: 'INNER', layout: 'abc', path: 'foo'};
+      assert.deepEqual(layouts(file, obj, {layoutDelims: ['<%', '%>']}).content, '{%= body %}[[body]]{%body%}{% body %}INNER');
     });
 
-    it('should use custom delimiters and contentTag', function() {
-      assert.deepEqual(layouts(stack4.aaa.content, 'bbb', stack4, {contentTag: 'foo', layoutDelims: ['{{', '}}']}).result, [
+    it('should use custom delimiters and tagname', function() {
+      var file = {content: stack4.aaa.content, layout: 'bbb', path: 'foo'};
+      assert.deepEqual(layouts(file, stack4, {tagname: 'foo', layoutDelims: ['{{', '}}']}).content, [
         'default above',
         'ccc above',
         'bbb above',
@@ -381,7 +410,8 @@ describe('.layouts():', function() {
   describe('layout delimiters', function() {
     it('should apply a layout to the given string.', function() {
       var obj = {blah: {content: 'blah above\n{% body %}\nblah below'}};
-      assert.deepEqual(layouts('This is content', 'blah', obj).result, [
+      var file = {content:'This is content', layout: 'blah', path: 'foo'};
+      assert.deepEqual(layouts(file, obj).content, [
         'blah above',
         'This is content',
         'blah below'
@@ -416,18 +446,20 @@ describe('.layouts():', function() {
       }
     };
 
-    it('should return an object with the layout history.', function() {
+    it.skip('should return an object with the layout history.', function() {
       var obj = {blah: {content: 'blah above\n{% body %}\nblah below'}};
-      var actual = layouts('This is content', 'blah', obj);
+      var file = {content:'This is content', layout: 'blah', path: 'foo'};
+      var actual = layouts(file, obj);
       assert(actual.hasOwnProperty('history'));
       assert(actual.hasOwnProperty('options'));
       assert(actual.hasOwnProperty('result'));
       assert(Array.isArray(actual.history));
     });
 
-    it('should push all layouts onto the stack:', function() {
-      var actual = layouts('This is content', 'aaa', stack, function(ele, res) {
-        res.scripts = _.union([], res.scripts, ele.layout.data.scripts || []);
+    it.skip('should push all layouts onto the stack:', function() {
+      var file = {content: 'This is content', layout: 'aaa', path: 'foo'};
+      var actual = layouts(file, stack, function(ele, res) {
+        res.scripts = union([], res.scripts, ele.layout.data.scripts || []);
       });
       assert(actual.hasOwnProperty('scripts'));
       assert.deepEqual(actual.scripts, ['aaa.js', 'bbb.js', 'ccc.js', 'index.js']);
@@ -442,9 +474,10 @@ describe('buffers:', function() {
     };
 
     var buffer = new Buffer('This is content');
-    var actual = layouts(buffer, 'abc', obj);
+    var file = {contents: buffer, layout: 'abc', path: 'foo'};
+    var actual = layouts(file, obj);
 
-    assert.deepEqual(actual.result, [
+    assert.deepEqual(actual.content, [
       'blah above',
       'This is content',
       'blah below'
@@ -496,8 +529,9 @@ describe('gulp / vinyl:', function() {
     return res;
   }
 
-  it('should replace the `{%= body %}` tag with content.', function() {
-    assert.deepEqual(layouts('This is content', 'aaa', vinylize(stack)).result, [
+  it('should support vinyl files', function() {
+    var file = toVinyl({content: 'This is content', layout: 'aaa', path: 'foo'});
+    assert.deepEqual(layouts(file, vinylize(stack)).content, [
       'default above',
       'ccc above',
       'bbb above',

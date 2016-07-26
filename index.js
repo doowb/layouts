@@ -160,3 +160,10 @@ function createRegex(options) {
   regexCache[key] = regex;
   return regex;
 }
+
+/**
+ * Expose utils
+ */
+
+module.exports.getLayoutName = getLayoutName;
+module.exports.createRegex = createRegex;

@@ -10,6 +10,9 @@ Wraps templates with layouts. Layouts can use other layouts and be nested to any
 - [Customization](#customization)
 - [API](#api)
 - [History](#history)
+  * [0.13.0](#0130)
+  * [0.12.0](#0120)
+  * [0.11.0](#0110)
 - [About](#about)
   * [Related projects](#related-projects)
   * [Contributing](#contributing)
@@ -136,33 +139,57 @@ By default, `{% body %}` is used as the placeholder (insertion point) for conten
 
 ## API
 
-### [renderLayouts](index.js#L36)
+### [applyLayouts](index.js#L40)
 
-Wrap one or more layouts around `string`.
+Apply a layout from the `layouts` object to `file.contents`. Layouts will be recursively applied until a layout is not defined by the returned file.
 
 **Params**
 
-* `string` **{String}**: The string to wrap with a layout.
-* `layoutName` **{String}**: The name (key) of the layout object to use.
-* `layouts` **{Object}**: Object of layout objects.
-* `options` **{Object}**: Optionally define a `defaultLayout` (string), pass custom delimiters (`layoutDelims`) to use as the placeholder for the content insertion point, or change the name of the placeholder tag with the `contentTag` option.
-* `fn` **{Function}**: Optionally pass a function to modify the context as each layout is applied.
-* `returns` **{String}**: Returns the original string wrapped with one or more layouts.
+* `file` **{Object}**: File object. This can be a plain object or [vinyl](http://github.com/gulpjs/vinyl) file.
+* `layouts` **{Object}**: Object of file objects to use as "layouts".
+* `options` **{Object}**
+* `returns` **{Object}**: Returns the original file object with layout(s) applied.
 
 **Example**
 
 ```js
-renderLayouts(string, layoutName, layouts, options, fn);
+var applyLayout = require('layouts');
+var layouts = {};
+layouts.default = new File({path: 'default', contents: new Buffer('foo\n{% body %}\nbar')}),
+layouts.other = new File({path: 'other', contents: new Buffer('baz\n{% body %}\nqux')});
+layouts.other.layout = 'default';
+
+var file = new File({path: 'whatever', contents: new Buffer('inner')});
+file.layout = 'other';
+
+applyLayouts(file, layouts);
+console.log(file.contents.toString());
+// foo
+// bar
+// inner
+// baz
+// qux
 ```
 
 ## History
 
-**v0.12.0**
+### 0.13.0
 
-* _BREAKING CHANGE_ change `options.tag` to `options.contentTag`
+**Breaking changes**
+
+* The main `layouts()` function now expects a `file` object as the first argument. This can be an object with `path`, `layout` and `contents` properties, or a valid [vinyl](http://github.com/gulpjs/vinyl) file. See the [API docs](#api) for more details.
+
+### 0.12.0
+
+**Breaking changes**
+
+* change `options.tag` to `options.contentTag`
+
+**Housekeeping**
+
 * update tests to use `assert` instead of `should`
 
-**v0.11.0**
+### 0.11.0
 
 * All view objects must now have a `path` property, following [vinyl](http://github.com/gulpjs/vinyl) conventions.
 
@@ -170,13 +197,13 @@ renderLayouts(string, layoutName, layouts, options, fn);
 
 ### Related projects
 
-* [assemble](https://www.npmjs.com/package/assemble): Get the rocks out of your socks! Assemble makes you fast at creating web projects… [more](https://github.com/assemble/assemble) | [homepage](https://github.com/assemble/assemble)
-* [gulp](https://www.npmjs.com/package/gulp): The streaming build system | [homepage](http://gulpjs.com)
-* [handlebars-layouts](https://www.npmjs.com/package/handlebars-layouts): Handlebars helpers which implement layout blocks similar to Jade, Jinja, Swig, and Twig. | [homepage](https://github.com/shannonmoeller/handlebars-layouts)
-* [inject-snippet](https://www.npmjs.com/package/inject-snippet): Inject a snippet of code or content into a string. | [homepage](https://github.com/jonschlinkert/inject-snippet)
-* [templates](https://www.npmjs.com/package/templates): System for creating and managing template collections, and rendering templates with any node.js template engine… [more](https://github.com/jonschlinkert/templates) | [homepage](https://github.com/jonschlinkert/templates)
-* [verb](https://www.npmjs.com/package/verb): Documentation generator for GitHub projects. Verb is extremely powerful, easy to use, and is used… [more](https://github.com/verbose/verb) | [homepage](https://github.com/verbose/verb)
-* [vinyl](https://www.npmjs.com/package/vinyl): A virtual file format | [homepage](http://github.com/gulpjs/vinyl)
+* [assemble](https://www.npmjs.com/package/assemble): Get the rocks out of your socks! Assemble makes you fast at creating web projects… [more](https://github.com/assemble/assemble) | [homepage](https://github.com/assemble/assemble "Get the rocks out of your socks! Assemble makes you fast at creating web projects. Assemble is used by thousands of projects for rapid prototyping, creating themes, scaffolds, boilerplates, e-books, UI components, API documentation, blogs, building websit")
+* [gulp](https://www.npmjs.com/package/gulp): The streaming build system | [homepage](http://gulpjs.com "The streaming build system")
+* [handlebars-layouts](https://www.npmjs.com/package/handlebars-layouts): Handlebars helpers which implement layout blocks similar to Jade, Jinja, Swig, and Twig. | [homepage](https://github.com/shannonmoeller/handlebars-layouts "Handlebars helpers which implement layout blocks similar to Jade, Jinja, Swig, and Twig.")
+* [inject-snippet](https://www.npmjs.com/package/inject-snippet): Inject a snippet of code or content into a string. | [homepage](https://github.com/jonschlinkert/inject-snippet "Inject a snippet of code or content into a string.")
+* [templates](https://www.npmjs.com/package/templates): System for creating and managing template collections, and rendering templates with any node.js template engine… [more](https://github.com/jonschlinkert/templates) | [homepage](https://github.com/jonschlinkert/templates "System for creating and managing template collections, and rendering templates with any node.js template engine. Can be used as the basis for creating a static site generator or blog framework.")
+* [verb](https://www.npmjs.com/package/verb): Documentation generator for GitHub projects. Verb is extremely powerful, easy to use, and is used… [more](https://github.com/verbose/verb) | [homepage](https://github.com/verbose/verb "Documentation generator for GitHub projects. Verb is extremely powerful, easy to use, and is used on hundreds of projects of all sizes to generate everything from API docs to readmes.")
+* [vinyl](https://www.npmjs.com/package/vinyl): A virtual file format | [homepage](http://github.com/gulpjs/vinyl "A virtual file format")
 
 ### Contributing
 
@@ -214,4 +241,4 @@ Released under the [MIT license](https://github.com/doowb/layouts/blob/master/LI
 
 ***
 
-_This file was generated by [verb](https://github.com/verbose/verb), v0.9.0, on July 15, 2016._
+_This file was generated by [verb](https://github.com/verbose/verb), v0.9.0, on July 25, 2016._

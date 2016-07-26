@@ -32,7 +32,7 @@ describe('errors:', function() {
       layouts({content: 'This is content', path: 'foo'}, {});
       cb(new Error('expected an error'));
     } catch (err) {
-      assert.equal(err.message, 'expected layout name to be a string');
+      assert.equal(err.message, 'expected layout name to be a string or falsey, not undefined');
       cb();
     }
   });

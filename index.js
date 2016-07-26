@@ -1,10 +1,5 @@
 'use strict';
 
-var isFalsey = require('falsey');
-var getFile = require('get-view');
-var delims = require('delimiter-regex');
-var extend = require('extend-shallow');
-var isObject = require('isobject');
 var utils = require('./utils');
 var regexCache = {};
 
@@ -38,32 +33,39 @@ var regexCache = {};
  */
 
 module.exports = function applyLayouts(file, layouts, options) {
-  if (!isObject(file)) {
+  if (!utils.isObject(file)) {
     throw new TypeError('expected file to be an object');
   }
   if (typeof file.path !== 'string') {
     throw new TypeError('expected file.path to be a string');
   }
 
-  var opts = extend({}, options);
+  var opts = utils.extend({}, options);
   var name = getLayoutName(file, opts.defaultLayout);
   if (name === false) {
     return file;
   }
 
   if (typeof name === 'undefined') {
-    throw new TypeError('expected layout name to be a string');
+    throw new TypeError('expected layout name to be a string or falsey, not undefined');
   }
 
+  file.layoutHistory = file.layoutHistory || [];
   opts.tagname = opts.tagname || 'body';
   var regex = createRegex(opts);
   var layout;
   var prev;
 
   // recursively resolve layouts
-  while (name && (prev !== name) && (layout = getFile(name, layouts))) {
+  while (name && (prev !== name) && (layout = utils.getFile(name, layouts))) {
+    file.layoutHistory.push(name);
     prev = name;
     name = resolveLayout(file, layout, opts, regex, name);
+
+    if (file.layoutHistory.indexOf(name) !== -1) {
+      name = null;
+      break;
+    }
   }
 
   if (typeof name === 'string' && prev !== name) {
@@ -120,7 +122,7 @@ function getLayoutName(file, defaultLayout) {
   var name = file.layout;
   if (typeof name === 'undefined' || name === true) {
     return defaultLayout;
-  } else if (name === false || name === null || name === 'null' || name === '' || (name && isFalsey(name))) {
+  } else if (name === false || name === null || name === 'null' || name === '' || (name && utils.isFalsey(name))) {
     return false;
   } else {
     return name;
@@ -132,7 +134,7 @@ function getLayoutName(file, defaultLayout) {
  */
 
 function createRegex(options) {
-  var opts = extend({}, options);
+  var opts = utils.extend({}, options);
   var layoutDelims = options.delims || options.layoutDelims;
   var key = options.tagname;
   if (layoutDelims) key += layoutDelims;
@@ -156,7 +158,7 @@ function createRegex(options) {
   opts.flags = 'g';
   opts.close = opts.close || '%}';
   opts.open = opts.open || '{%';
-  regex = delims(opts);
+  regex = utils.delims(opts);
   regexCache[key] = regex;
   return regex;
 }

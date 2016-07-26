@@ -1,17 +1,23 @@
 'use strict';
 
+var utils = module.exports = require('lazy-cache')(require);
+var fn = require;
+require = utils;
+
 /**
  * Lazily required module dependencies
  */
 
-var utils = module.exports = require('lazy-cache')(require);
-var fn = require;
-
-require = utils;
-require('falsey', 'isFalsey');
 require('delimiter-regex', 'delims');
-require('get-view');
+require('extend-shallow', 'extend');
+require('falsey', 'isFalsey');
+require('get-view', 'getFile');
+require('isobject', 'isObject');
 require = fn;
+
+/**
+ * Return true val is a non-empty string
+ */
 
 utils.isString = function(val) {
   return val && typeof val === 'string';

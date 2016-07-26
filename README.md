@@ -139,7 +139,7 @@ By default, `{% body %}` is used as the placeholder (insertion point) for conten
 
 ## API
 
-### [applyLayouts](index.js#L40)
+### [applyLayouts](index.js#L35)
 
 Apply a layout from the `layouts` object to `file.contents`. Layouts will be recursively applied until a layout is not defined by the returned file.
 

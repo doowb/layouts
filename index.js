@@ -83,7 +83,7 @@ module.exports = function applyLayouts(file, layouts, options) {
 function resolveLayout(file, layout, options, regex, name) {
   var val = toString(layout, options);
 
-  if (!regex.test(val)) {
+  if (!val.match(regex)) {
     var delims = utils.matchDelims(regex, options.tagname);
     throw new Error(`cannot find tag "${delims}" in "${name}"`);
   }
@@ -92,8 +92,25 @@ function resolveLayout(file, layout, options, regex, name) {
     layout.contents = new Buffer(layout.content);
   }
 
+  // var str = toString(file, options);
+  // file.content = val.replace(regex, str);
+  regex = new RegExp('(?:^(\\s*))?' + regex.toString().split('/').slice(1, -1).join('/'), 'gm');
+  file.totalIndent = file.totalIndent || '';
+
+  // ensure that the indent variable is defined
   var str = toString(file, options);
-  file.content = val.replace(regex, str);
+  file.content = val.replace(regex, function(line, indent) {
+    file.indent = indent || '';
+    file.totalIndent += file.indent;
+
+    return str
+      .split('\n')
+      .map(function(line) {
+        return file.indent + line;
+      })
+      .join('\n');
+  });
+
   return getLayoutName(layout, options.defaultLayout);
 }
 

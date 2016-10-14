@@ -1,4 +1,5 @@
 'use strict';
+/* eslint-disable no-redeclare */
 
 require('mocha');
 var union = require('arr-union');
@@ -265,7 +266,7 @@ describe('.layouts():', function() {
       ].join('\n'));
     });
 
-    it('should replace the `{%= body %}` tag with content.', function() {
+    it('should replace the `{% body %}` tag with content.', function() {
       var file = {content: 'This is content', layout: 'aaa', path: 'foo'};
       assert.deepEqual(layouts(file, stack).content, [
         'default above',
@@ -410,11 +411,45 @@ describe('.layouts():', function() {
   describe('layout delimiters', function() {
     it('should apply a layout to the given string.', function() {
       var obj = {blah: {content: 'blah above\n{% body %}\nblah below'}};
-      var file = {content:'This is content', layout: 'blah', path: 'foo'};
+      var file = {content: 'This is content', layout: 'blah', path: 'foo'};
       assert.deepEqual(layouts(file, obj).content, [
         'blah above',
         'This is content',
         'blah below'
+      ].join('\n'));
+    });
+  });
+
+  describe('preserve whitespace', function() {
+    it('should preserve the whitespace on a given string.', function() {
+      var obj = {blah: {content: 'blah above\n  {% body %}\nblah below'}};
+      var file = {content: 'first line of content\nsecond line of content', layout: 'blah', path: 'foo'};
+      assert.deepEqual(layouts(file, obj).content, [
+        'blah above',
+        '  first line of content',
+        '  second line of content',
+        'blah below'
+      ].join('\n'));
+    });
+
+    it('should preserve the whitespace on a given string in multiple layouts.', function() {
+      var obj = {
+        one: {content: 'one above\n  {% body %}\none below'},
+        two: {content: 'two above\n  {% body %}\ntwo below', layout: 'one' },
+        three: {content: 'three above\n  {% body %}\nthree below', layout: 'two' },
+        four: {content: 'four above\n  {% body %}\nfour below', layout: 'three' }
+      };
+      var file = {content: 'This is content', layout: 'four', path: 'foo'};
+      assert.deepEqual(layouts(file, obj).content, [
+        'one above',
+        '  two above',
+        '    three above',
+        '      four above',
+        '        This is content',
+        '      four below',
+        '    three below',
+        '  two below',
+        'one below'
       ].join('\n'));
     });
   });
@@ -448,7 +483,7 @@ describe('.layouts():', function() {
 
     it.skip('should return an object with the layout history.', function() {
       var obj = {blah: {content: 'blah above\n{% body %}\nblah below'}};
-      var file = {content:'This is content', layout: 'blah', path: 'foo'};
+      var file = {content: 'This is content', layout: 'blah', path: 'foo'};
       var actual = layouts(file, obj);
       assert(actual.hasOwnProperty('history'));
       assert(actual.hasOwnProperty('options'));

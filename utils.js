@@ -3,23 +3,6 @@
 var utils = module.exports;
 
 /**
- * Return true val is a non-empty string
- */
-
-utils.isString = function(val) {
-  return val && typeof val === 'string';
-};
-
-/**
- * Format an error message
- */
-
-utils.error = function(re, tag, name) {
-  var delims = utils.matchDelims(re, tag);
-  return 'cannot find tag "' + delims + '" in "' + name + '"';
-};
-
-/**
  * Only used if an error is thrown. Attempts to recreate
  * delimiters for the error message.
  */

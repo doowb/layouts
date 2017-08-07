@@ -50,7 +50,7 @@ function layouts(file, stack, options, fn) {
   }
 
   var opts = Object.assign({}, options);
-  var name = getLayoutName(file, opts.defaultLayout);
+  var name = getLayoutName(file, opts);
   if (name === false) {
     return file;
   }
@@ -67,11 +67,6 @@ function layouts(file, stack, options, fn) {
 
   // recursively resolve stack
   while (name && (prev !== name) && (layout = getFile(name, stack))) {
-    if (file.layoutStack.indexOf(layout) !== -1) {
-      name = null;
-      break;
-    }
-
     file.layoutStack.push(layout);
     prev = name;
     name = resolveLayout(file, layout, opts, regex, name);
@@ -80,10 +75,6 @@ function layouts(file, stack, options, fn) {
     if (typeof fn === 'function') {
       fn(file, layout);
     }
-  }
-
-  if (typeof name === 'string' && prev !== name) {
-    throw new Error('could not find layout "' + name + '"');
   }
 
   file.contents = new Buffer(file.content);
@@ -97,7 +88,7 @@ function layouts(file, stack, options, fn) {
 function resolveLayout(file, layout, options, regex, name) {
   var val = toString(layout, options);
 
-  if (!val.match(regex)) {
+  if (!regex.test(val)) {
     var delims = utils.matchDelims(regex, options.tagname);
     throw new Error(`cannot find tag "${delims}" in "${name}"`);
   }
@@ -111,7 +102,7 @@ function resolveLayout(file, layout, options, regex, name) {
     layout.contents = new Buffer(layout.content);
   }
 
-  return getLayoutName(layout, options.defaultLayout);
+  return getLayoutName(layout, options);
 }
 
 /**
@@ -119,7 +110,7 @@ function resolveLayout(file, layout, options, regex, name) {
  */
 
 function toString(file, options) {
-  var str = (file.content || file.contents || '').toString();
+  var str = (file.content || file.contents).toString();
   return options.trim ? str.trim() : str;
 }
 
@@ -135,8 +126,10 @@ function toString(file, options) {
  * @api private
  */
 
-function getLayoutName(file, defaultLayout) {
-  var name = file.layout;
+function getLayoutName(file, options) {
+  var defaultLayout = options.defaultLayout;
+  var prop = options.layoutProp || 'layout';
+  var name = file[prop];
   if (typeof name === 'undefined' || name === true || name === defaultLayout) {
     return defaultLayout;
   }

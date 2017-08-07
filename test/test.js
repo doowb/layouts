@@ -97,6 +97,21 @@ describe('layouts', function() {
       ].join('\n'));
     });
 
+    it('should trim whitespace', function() {
+      var file = {
+        content: '   This is content   ',
+        layout: 'multiple',
+        path: 'foo'
+      };
+
+      assert.deepEqual(layouts(file, stack, {trim: true}).content, [
+        'blah above',
+        'This is content',
+        'This is content',
+        'blah below'
+      ].join('\n'));
+    });
+
     it('should replace the `{%= body %}` tag with content.', function() {
       var file = {content: 'This is content', layout: 'aaa', path: 'foo'};
       assert.deepEqual(layouts(file, stack).content, [

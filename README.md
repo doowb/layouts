@@ -8,6 +8,7 @@
 - [Customization](#customization)
 - [API](#api)
 - [History](#history)
+  * [1.0.0](#100)
   * [0.13.0](#0130)
   * [0.12.0](#0120)
   * [0.11.0](#0110)
@@ -164,6 +165,17 @@ console.log(file.contents.toString());
 ```
 
 ## History
+
+### 1.0.0
+
+**Breaking changes**
+
+* renames `layoutHistory` to `layoutStack`
+* layouts in `layoutStack` are now the actual layout object, instead of the layout name
+
+**Added**
+
+* Adds support for a function as the last argument. If passed, the function is called on the file and each layout with this signature: `fn(file, layout)`.
 
 ### 0.13.0
 

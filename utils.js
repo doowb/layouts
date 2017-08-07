@@ -1,19 +1,6 @@
 'use strict';
 
-var utils = module.exports = require('lazy-cache')(require);
-var fn = require;
-require = utils;
-
-/**
- * Lazily required module dependencies
- */
-
-require('delimiter-regex', 'delims');
-require('extend-shallow', 'extend');
-require('falsey', 'isFalsey');
-require('get-view', 'getFile');
-require('isobject', 'isObject');
-require = fn;
+var utils = module.exports;
 
 /**
  * Return true val is a non-empty string
@@ -37,7 +24,7 @@ utils.error = function(re, tag, name) {
  * delimiters for the error message.
  */
 
-var types = {
+utils.types = {
   '{%=': function(str) {
     return '{%= ' + str + ' %}';
   },
@@ -62,6 +49,7 @@ var types = {
 };
 
 utils.matchDelims = function(regex, tagname) {
+  // var source = regex.source.split('(\\s*)').join('');
   var ch = regex.source.slice(0, 4);
   if (/[\\]/.test(ch.charAt(0))) {
     ch = ch.slice(1);
@@ -71,5 +59,5 @@ utils.matchDelims = function(regex, tagname) {
   } else {
     ch = ch.slice(0, 3);
   }
-  return types[ch](tagname);
+  return utils.types[ch](tagname);
 };

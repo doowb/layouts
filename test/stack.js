@@ -46,7 +46,6 @@ describe('stack', function() {
       file.data = file.data || {};
       file.data.scripts = union([], file.data.scripts, layout.data.scripts);
     });
-
     assert(file.data.hasOwnProperty('scripts'));
     assert.deepEqual(file.data.scripts, ['aaa.js', 'bbb.js', 'ccc.js', 'index.js']);
   });

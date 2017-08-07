@@ -1,14 +1,19 @@
 'use strict';
 
+var delims = require('delimiter-regex');
+var isObject = require('isobject');
+var isFalsey = require('falsey');
+var getFile = require('get-view');
 var utils = require('./utils');
 var regexCache = {};
 
 /**
- * Apply a layout from the `layouts` object to `file.contents`. Layouts will be
- * recursively applied until a layout is not defined by the returned file.
+ * Apply a layout from the `layouts` object to `file.contents`.
+ * Layouts will be recursively applied until a layout is not
+ * defined by the returned file.
  *
  * ```js
- * var applyLayout = require('layouts');
+ * var applyLayouts = require('layouts');
  * var layouts = {};
  * layouts.default = new File({path: 'default', contents: new Buffer('foo\n{% body %}\nbar')}),
  * layouts.other = new File({path: 'other', contents: new Buffer('baz\n{% body %}\nqux')});
@@ -32,15 +37,19 @@ var regexCache = {};
  * @api public
  */
 
-module.exports = function applyLayouts(file, layouts, options) {
-  if (!utils.isObject(file)) {
+function layouts(file, stack, options, fn) {
+  if (!isObject(file)) {
     throw new TypeError('expected file to be an object');
   }
   if (typeof file.path !== 'string') {
     throw new TypeError('expected file.path to be a string');
   }
+  if (typeof options === 'function') {
+    fn = options;
+    options = null;
+  }
 
-  var opts = utils.extend({}, options);
+  var opts = Object.assign({}, options);
   var name = getLayoutName(file, opts.defaultLayout);
   if (name === false) {
     return file;
@@ -50,21 +59,26 @@ module.exports = function applyLayouts(file, layouts, options) {
     throw new TypeError('expected layout name to be a string or falsey, not undefined');
   }
 
-  file.layoutHistory = file.layoutHistory || [];
+  file.layoutStack = file.layoutStack || [];
   opts.tagname = opts.tagname || 'body';
   var regex = createRegex(opts);
   var layout;
   var prev;
 
-  // recursively resolve layouts
-  while (name && (prev !== name) && (layout = utils.getFile(name, layouts))) {
-    file.layoutHistory.push(name);
+  // recursively resolve stack
+  while (name && (prev !== name) && (layout = getFile(name, stack))) {
+    if (file.layoutStack.indexOf(layout) !== -1) {
+      name = null;
+      break;
+    }
+
+    file.layoutStack.push(layout);
     prev = name;
     name = resolveLayout(file, layout, opts, regex, name);
 
-    if (file.layoutHistory.indexOf(name) !== -1) {
-      name = null;
-      break;
+    // if a function is passed, call it on the file
+    if (typeof fn === 'function') {
+      fn(file, layout);
     }
   }
 
@@ -74,7 +88,7 @@ module.exports = function applyLayouts(file, layouts, options) {
 
   file.contents = new Buffer(file.content);
   return file;
-};
+}
 
 /**
  * Resolve the layout to use for the current file.
@@ -83,17 +97,20 @@ module.exports = function applyLayouts(file, layouts, options) {
 function resolveLayout(file, layout, options, regex, name) {
   var val = toString(layout, options);
 
-  if (!regex.test(val)) {
+  if (!val.match(regex)) {
     var delims = utils.matchDelims(regex, options.tagname);
     throw new Error(`cannot find tag "${delims}" in "${name}"`);
   }
 
+  // ensure that the indent variable is defined
+  var str = toString(file, options);
+  file.content = val.replace(regex, str);
+
+  layout.content = toString(layout, options);
   if (!layout.contents) {
     layout.contents = new Buffer(layout.content);
   }
 
-  var str = toString(file, options);
-  file.content = val.replace(regex, str);
   return getLayoutName(layout, options.defaultLayout);
 }
 
@@ -120,13 +137,17 @@ function toString(file, options) {
 
 function getLayoutName(file, defaultLayout) {
   var name = file.layout;
-  if (typeof name === 'undefined' || name === true) {
+  if (typeof name === 'undefined' || name === true || name === defaultLayout) {
     return defaultLayout;
-  } else if (name === false || name === null || name === 'null' || name === '' || (name && utils.isFalsey(name))) {
-    return false;
-  } else {
-    return name;
   }
+  name = String(name);
+  if (name === 'false' || name === 'null' || name === 'nil' || name === '') {
+    return false;
+  }
+  if (name && isFalsey(name)) {
+    return false;
+  }
+  return name;
 }
 
 /**
@@ -134,7 +155,7 @@ function getLayoutName(file, defaultLayout) {
  */
 
 function createRegex(options) {
-  var opts = utils.extend({}, options);
+  var opts = Object.assign({}, options);
   var layoutDelims = options.delims || options.layoutDelims;
   var key = options.tagname;
   if (layoutDelims) key += layoutDelims;
@@ -158,7 +179,7 @@ function createRegex(options) {
   opts.flags = 'g';
   opts.close = opts.close || '%}';
   opts.open = opts.open || '{%';
-  regex = utils.delims(opts);
+  regex = delims(opts);
   regexCache[key] = regex;
   return regex;
 }
@@ -167,5 +188,6 @@ function createRegex(options) {
  * Expose utils
  */
 
-module.exports.getLayoutName = getLayoutName;
-module.exports.createRegex = createRegex;
+layouts.getLayoutName = getLayoutName;
+layouts.createRegex = createRegex;
+module.exports = layouts;

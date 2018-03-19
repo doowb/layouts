@@ -2,10 +2,16 @@
 
 > Wraps templates with layouts. Layouts can use other layouts and be nested to any depth. This can be used 100% standalone to wrap any kind of file with banners, headers or footer content. Use for markdown, HTML, handlebars views, lo-dash templates, etc. Layouts can also be vinyl files.
 
+Please consider following this project's author, [Brian Woodward](https://github.com/doowb), and consider starring the project to show your :heart: and support.
+
 - [Install](#install)
 - [Usage](#usage)
-- [Examples](#examples)
-- [Customization](#customization)
+- [Heads up!](#heads-up)
+- [Example](#example)
+- [Options](#options)
+  * [options.disableHistory](#optionsdisablehistory)
+  * [options.layoutDelims](#optionslayoutdelims)
+  * [options.preserveWhitespace](#optionspreservewhitespace)
 - [API](#api)
 - [History](#history)
   * [1.0.0](#100)
@@ -27,142 +33,74 @@ $ npm install --save layouts
 ## Usage
 
 ```js
-var renderLayouts = require('layouts');
+const renderLayouts = require('layouts');
+
+renderLayouts(file, layoutCollection, options);
 ```
 
-## Examples
+* `file` - a file object (or [vinyl](https://github.com/gulpjs/vinyl) file) with a `file.contents` property that must be a buffer
+* `layoutCollection` - an object of file objects to use as layouts
+* `options` - see [available options](#options)
 
-**Basic example**
+## Heads up!
 
-In this example, two layouts are used:
+This library does not clone the file object. If you want to prevent `file.contents` from being mutated (after rendering layouts), clone the file first before passing it to this library.
 
-* the first layout, `one`, will wrap the string
-* the second layout, `two`, will wrap the first layout
+## Example
 
 ```js
-var layouts = {
-  one: {content: 'one before\n{% body %}\none after', layout: 'two'},
-  two: {content: 'two before\n{% body %}\ntwo after'},
+const renderLayouts = require('layouts');
+
+const file = {
+  contents: Buffer.from('<div>Wrap me with a layout!!!</div>'),
+  layout: 'one'
 };
 
-// `one` is the name of the first layout to use on the provided string
-renderLayouts('<div>Wrap me with a layout!!!</div>', 'one', layouts);
-```
-
-Results in:
-
-```html
-two before
-one before
-<div>Wrap me with a layout!!!</div>
-one after
-two after
-```
-
-**HTML**
-
-This example shows how to use nested HTML layouts to wrap content:
-
-```js
-var layouts = {};
-
-layouts.base = {
-  path: 'base.tmpl',
-  content: [
-    '<!DOCTYPE html>',
-    '<html lang="en">',
-    '  <head>',
-    '    <meta charset="UTF-8">',
-    '    <title>Home</title>',
-    '  </head>',
-    '  <body>',
-    '    {% body %}',
-    '  </body>',
-    '</html>',
-  ].join('\n')
+const layoutCollection = {
+  one: { contents: Buffer.from('one before\n{% body %}\none after'), layout: 'two' },
+  two: { contents: Buffer.from('two before\n{% body %}\ntwo after') }
 };
 
-// this `nav` layout will be wrapped with the `base` layout
-layouts.nav = {
-  path: 'nav.tmpl',
-  layout: 'base',
-  content: '<nav>\n{% body %}\n</nav>'
-};
-
-// this string will be wrapped with the `nav` layout
-var str = [
-  '<ul class="categories">',
-  '  <li class="active"> <a href="#"> Development </a> </li>',
-  '  <li> <a href="#"> Design </a> </li>',
-  '  <li> <a href="#"> Node.js </a> </li>',
-  '</ul>'
-].join('\n')
-
-// `nav` is the name of the layout to use
-renderLayouts(str, nav, layouts);
+const res = renderLayouts(file, layoutCollection);
+console.log(res.contents.toString());
+// two before
+// one before
+// <div>Wrap me with a layout!!!</div>
+// one after
+// two after
 ```
 
-Results in something like:
+## Options
 
-```html
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <title>Home</title>
-  </head>
-  <body>
-    <nav>
-      <ul class="categories">
-        <li class="active"> <a href="#"> Development </a> </li>
-        <li> <a href="#"> Design </a> </li>
-        <li> <a href="#"> Node.js </a> </li>
-      </ul>
-    </nav>
-  </body>
-</html>
-```
+### options.disableHistory
 
-## Customization
+**Type**: `boolean`
 
-By default, `{% body %}` is used as the placeholder (insertion point) for content, but this can easily be customized with the following options:
+**Default**: `undefined`
 
-* `layoutDelims`: the delimiters to use. This can be a regex, like `/\{{([^}]+)\}}/`, or an array of delimiter strings, like `['\{{', '}}']`
-* `contentTag`: the name of the content placeholder tag _(defaults to **body**)_.
-
-## API
-
-### [layouts](index.js#L40)
-
-Apply a layout from the `layouts` object to `file.contents`. Layouts will be recursively applied until a layout is not defined by the returned file.
-
-**Params**
-
-* `file` **{Object}**: File object. This can be a plain object or [vinyl](https://github.com/gulpjs/vinyl) file.
-* `layouts` **{Object}**: Object of file objects to use as "layouts".
-* `options` **{Object}**
-* `returns` **{Object}**: Returns the original file object with layout(s) applied.
+By default, layouts are prevented from being applied multiple times to the same string. Disable this by setting `disableHistory` to true.
 
 **Example**
 
 ```js
-var applyLayouts = require('layouts');
-var layouts = {};
-layouts.default = new File({path: 'default', contents: new Buffer('foo\n{% body %}\nbar')}),
-layouts.other = new File({path: 'other', contents: new Buffer('baz\n{% body %}\nqux')});
-layouts.other.layout = 'default';
-
-var file = new File({path: 'whatever', contents: new Buffer('inner')});
-file.layout = 'other';
-
-applyLayouts(file, layouts);
-console.log(file.contents.toString());
-// foo
-// bar
-// inner
-// baz
-// qux
+layouts(file, layoutCollection, { disableHistory: true });
 ```
+
+### options.layoutDelims
+
+Custom delimiters to use for injecting contents into layouts.
+
+**Type**: `regex`
+
+**Default**: `/{% (body) %}/g`
+
+### options.preserveWhitespace
+
+Preserve leading whitespace when injecting a string into a layout.
+
+**Type**: `boolean`
+
+**Default**: `undefined`
 
 ## History
 
@@ -199,6 +137,37 @@ console.log(file.contents.toString());
 
 ## About
 
+<details>
+<summary><strong>Contributing</strong></summary>
+
+Pull requests and stars are always welcome. For bugs and feature requests, [please create an issue](../../issues/new).
+
+</details>
+
+<details>
+<summary><strong>Running Tests</strong></summary>
+
+Running and reviewing unit tests is a great way to get familiarized with a library and its API. You can install dependencies and run tests with the following command:
+
+```sh
+$ npm install && npm test
+```
+
+</details>
+
+<details>
+<summary><strong>Building docs</strong></summary>
+
+_(This project's readme.md is generated by [verb](https://github.com/verbose/verb-generate-readme), please don't edit the readme directly. Any changes to the readme must be made in the [.verb.md](.verb.md) readme template.)_
+
+To generate the readme, run the following command:
+
+```sh
+$ npm install -g verbose/verb#dev verb-generate-readme && verb
+```
+
+</details>
+
 ### Related projects
 
 You might also be interested in these projects:
@@ -211,47 +180,26 @@ You might also be interested in these projects:
 * [verb](https://www.npmjs.com/package/verb): Documentation generator for GitHub projects. Verb is extremely powerful, easy to use, and is used… [more](https://github.com/verbose/verb) | [homepage](https://github.com/verbose/verb "Documentation generator for GitHub projects. Verb is extremely powerful, easy to use, and is used on hundreds of projects of all sizes to generate everything from API docs to readmes.")
 * [vinyl](https://www.npmjs.com/package/vinyl): Virtual file format. | [homepage](https://github.com/gulpjs/vinyl#readme "Virtual file format.")
 
-### Contributing
-
-Pull requests and stars are always welcome. For bugs and feature requests, [please create an issue](../../issues/new).
-
 ### Contributors
 
 | **Commits** | **Contributor** | 
 | --- | --- |
-| 131 | [jonschlinkert](https://github.com/jonschlinkert) |
+| 139 | [jonschlinkert](https://github.com/jonschlinkert) |
 | 26 | [doowb](https://github.com/doowb) |
-
-### Building docs
-
-_(This project's readme.md is generated by [verb](https://github.com/verbose/verb-generate-readme), please don't edit the readme directly. Any changes to the readme must be made in the [.verb.md](.verb.md) readme template.)_
-
-To generate the readme, run the following command:
-
-```sh
-$ npm install -g verbose/verb#dev verb-generate-readme && verb
-```
-
-### Running tests
-
-Running and reviewing unit tests is a great way to get familiarized with a library and its API. You can install dependencies and run tests with the following command:
-
-```sh
-$ npm install && npm test
-```
 
 ### Author
 
 **Brian Woodward**
 
-* [github/doowb](https://github.com/doowb)
-* [twitter/doowb](https://twitter.com/doowb)
+* [LinkedIn Profile](https://linkedin.com/in/jonschlinkert)
+* [GitHub Profile](https://github.com/doowb)
+* [Twitter Profile](https://twitter.com/jonschlinkert)
 
 ### License
 
-Copyright © 2017, [Brian Woodward](https://github.com/doowb).
+Copyright © 2018, [Brian Woodward](https://github.com/doowb).
 Released under the [MIT License](LICENSE).
 
 ***
 
-_This file was generated by [verb-generate-readme](https://github.com/verbose/verb-generate-readme), v0.6.0, on August 07, 2017._
+_This file was generated by [verb-generate-readme](https://github.com/verbose/verb-generate-readme), v0.6.0, on March 19, 2018._

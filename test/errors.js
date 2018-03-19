@@ -1,10 +1,20 @@
 'use strict';
 
 require('mocha');
-var assert = require('assert');
-var layouts = require('..');
+const assert = require('assert');
+const layouts = require('..');
 
 describe('errors:', function() {
+  describe('layout', function() {
+    it('should throw an error when a layout is not found.', function() {
+      assert.throws(function() {
+        const obj = { abc: { path: 'blah', contents: Buffer.from('blah above\n{% body %}\nblah below') } };
+        const file = { contents: Buffer.from('This is content'), layout: 'foobar', path: 'foo' };
+        layouts(file, obj);
+      }, /layout foobar was not found/);
+    });
+  });
+
   describe('arguments', function() {
     it('should throw an error when invalid arguments are passed:', function() {
       assert.throws(function() {
@@ -14,105 +24,81 @@ describe('errors:', function() {
   });
 
   describe('properties', function() {
-    it('should throw an error when file.path is not a string', function() {
-      assert.throws(function() {
-        layouts({content: 'This is content'}, {});
-      });
-    });
-
-    it('should throw an error when layout name is not defined', function() {
-      assert.throws(function() {
-        layouts({content: 'This is content', path: 'foo'}, {});
-      });
-    });
-
     it('should throw an error when the template does not exist', function() {
       assert.throws(function() {
-        var file = {content: 'This is content', layout: 'blah', path: 'foo'};
-        layouts(file, {blah: {content: 'foo'}});
-      });
+        const file = { contents: Buffer.from('This is content'), layout: 'default', path: 'foo' };
+        layouts(file, { blah: { path: '', contents: Buffer.from('foo') } });
+      }, /was not found/);
     });
   });
 
   describe('body tag not found:', function() {
     it('should throw an error with default delims:', function() {
       assert.throws(function() {
-        var obj = {abc: {content: 'blah above\n{% foo %}\nblah below'}};
-        var file = {content: 'This is content', layout: 'abc', path: 'foo'};
+        const obj = { abc: { contents: Buffer.from('blah above\n{% foo %}\nblah below') } };
+        const file = { contents: Buffer.from('This is content'), layout: 'abc', path: 'foo' };
         layouts(file, obj);
-      });
+      }, /cannot find tag/);
     });
 
     it('should throw an error when custom tag is not found:', function() {
       assert.throws(function() {
-        var obj = {abc: {content: 'blah above\n{% bar %}\nblah below', path: 'abc'}};
-        var file = {content: 'This is content', layout: 'abc', path: 'foo'};
-        layouts(file, obj, {layoutDelims: ['{%', '%}']});
-      });
+        const obj = { abc: { contents: Buffer.from('blah above\n{% bar %}\nblah below'), path: 'abc' } };
+        const file = { contents: Buffer.from('This is content'), layout: 'abc', path: 'foo' };
+        layouts(file, obj, { layoutDelims: ['{%', '%}'] });
+      }, /cannot find tag/);
 
       assert.throws(function() {
-        var obj = {abc: {content: 'blah above\n{%= bar %}\nblah below'}};
-        var file = {content: 'This is content', layout: 'abc', path: 'foo'};
-        layouts(file, obj, {layoutDelims: ['{%=', '%}']});
-      });
+        const obj = { abc: { contents: Buffer.from('blah above\n{%= bar %}\nblah below') } };
+        const file = { contents: Buffer.from('This is content'), layout: 'abc', path: 'foo' };
+        layouts(file, obj, { layoutDelims: ['{%=', '%}'] });
+      }, /cannot find tag/);
 
       assert.throws(function() {
-        var obj = {abc: {content: 'blah above\n{%- ody %}\nblah below'}};
-        var file = {content: 'This is content', layout: 'abc', path: 'foo'};
-        layouts(file, obj, {layoutDelims: ['{%-', '%}']});
-      });
+        const obj = { abc: { contents: Buffer.from('blah above\n{%- ody %}\nblah below') } };
+        const file = { contents: Buffer.from('This is content'), layout: 'abc', path: 'foo' };
+        layouts(file, obj, { layoutDelims: ['{%-', '%}'] });
+      }, /cannot find tag/);
 
       assert.throws(function() {
-        var obj = {abc: {content: 'blah above\n<% ody %>\nblah below'}};
-        var file = {content: 'This is content', layout: 'abc', path: 'foo'};
-        layouts(file, obj, {layoutDelims: ['<%', '%>']});
-      });
+        const obj = { abc: { contents: Buffer.from('blah above\n<% ody %>\nblah below') } };
+        const file = { contents: Buffer.from('This is content'), layout: 'abc', path: 'foo' };
+        layouts(file, obj, { layoutDelims: ['<%', '%>'] });
+      }, /cannot find tag/);
 
       assert.throws(function() {
-        var obj = {abc: {content: 'blah above\n<%= ody %>\nblah below'}};
-        var file = {content: 'This is content', layout: 'abc', path: 'foo'};
-        layouts(file, obj, {layoutDelims: ['<%=', '%>']});
-      });
+        const obj = { abc: { contents: Buffer.from('blah above\n<%= ody %>\nblah below') } };
+        const file = { contents: Buffer.from('This is content'), layout: 'abc', path: 'foo' };
+        layouts(file, obj, { layoutDelims: ['<%=', '%>'] });
+      }, /cannot find tag/);
 
       assert.throws(function() {
-        var obj = {abc: {content: 'blah above\n<%- ody %>\nblah below'}};
-        var file = {content: 'This is content', layout: 'abc', path: 'foo'};
-        layouts(file, obj, {layoutDelims: ['<%-', '%>']});
-      });
+        const obj = { abc: { contents: Buffer.from('blah above\n<%- ody %>\nblah below') } };
+        const file = { contents: Buffer.from('This is content'), layout: 'abc', path: 'foo' };
+        layouts(file, obj, { layoutDelims: ['<%-', '%>'] });
+      }, /cannot find tag/);
     });
   });
 
   describe('custom delimiters', function() {
-    it('should throw an error when custom delims are an array:', function() {
+    it('should throw an error when layout tag is not matched', function() {
       assert.throws(function() {
-        var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
-        var file = {content: 'This is content', layout: 'abc', path: 'foo'};
-        layouts(file, obj, {layoutDelims: ['{{', '}}']});
-      });
-    });
+        const obj = { abc: { contents: Buffer.from('blah above\n{% ody %}\nblah below') } };
+        const file = { contents: Buffer.from('This is content'), layout: 'abc', path: 'foo' };
+        layouts(file, obj, { layoutDelims: ['{{', '}}'] });
+      }, /cannot find tag/);
 
-    it('should throw an error when tag is missing with custom regex', function() {
       assert.throws(function() {
-        var obj = {abc: {content: 'blah above\n{{foo}}\nblah below'}};
-        var file = {content: 'This is content', layout: 'abc', path: 'foo'};
-        layouts(file, obj, {layoutDelims: /\{%([\s\S]+?)%}/g});
-      });
-    });
+        const obj = { abc: { contents: Buffer.from('blah above\n{{foo}}\nblah below') } };
+        const file = { contents: Buffer.from('This is content'), layout: 'abc', path: 'foo' };
+        layouts(file, obj, { layoutDelims: /{%([\s\S]+?)%}/g });
+      }, /cannot find tag/);
 
-    it('should throw an error when custom delims are a string:', function() {
       assert.throws(function() {
-        var obj = {abc: {content: 'blah above\n{% ody %}\nblah below'}};
-        var file = {content: 'This is content', layout: 'abc', path: 'foo'};
-        layouts(file, obj, {layoutDelims: '{{([\\s\\S]+?)}}'});
-      });
-    });
-
-    it('should throw an error when a layout is not applied.', function() {
-      assert.throws(function() {
-        var obj = {abc: {path: 'blah', content: 'blah above\n{% body %}\nblah below'}};
-        var file = {content: 'This is content', layout: 'foobar', path: 'foo'};
-        layouts(file, obj);
-      });
+        const obj = { abc: { contents: Buffer.from('blah above\n{% ody %}\nblah below') } };
+        const file = { contents: Buffer.from('This is content'), layout: 'abc', path: 'foo' };
+        layouts(file, obj, { layoutDelims: '{{([\\s\\S]+?)}}' });
+      }, /cannot find tag/);
     });
   });
 });

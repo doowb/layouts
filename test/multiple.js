@@ -1,44 +1,44 @@
 'use strict';
 
 require('mocha');
-var assert = require('assert');
-var layouts = require('..');
+const assert = require('assert');
+const layouts = require('..');
 
 describe('layouts', function() {
-  var stack = {
-    'default': {
-      content: 'default above\n{% body %}\ndefault below',
-      data: {scripts: ['main.js']},
-      locals: {title: 'Quux'}
+  const stack = {
+    default: {
+      contents: Buffer.from('default above\n{% body %}\ndefault below'),
+      data: { scripts: ['main.js'] },
+      locals: { title: 'Quux' }
     },
     aaa: {
-      content: 'aaa above\n{% body %}\naaa below',
-      data: {scripts: ['aaa.js']},
-      locals: {title: 'Foo'},
+      contents: Buffer.from('aaa above\n{% body %}\naaa below'),
+      data: { scripts: ['aaa.js'] },
+      locals: { title: 'Foo' },
       layout: 'bbb'
     },
     bbb: {
-      content: 'bbb above\n{% body %}\nbbb below',
-      data: {scripts: ['bbb.js']},
-      locals: {title: 'Bar'},
+      contents: Buffer.from('bbb above\n{% body %}\nbbb below'),
+      data: { scripts: ['bbb.js'] },
+      locals: { title: 'Bar' },
       layout: 'ccc'
     },
     ccc: {
-      content: 'ccc above\n{% body %}\nccc below',
-      data: {scripts: ['ccc.js']},
-      locals: {title: 'Baz'},
+      contents: Buffer.from('ccc above\n{% body %}\nccc below'),
+      data: { scripts: ['ccc.js'] },
+      locals: { title: 'Baz' },
       layout: 'default'
     },
     ddd: {
-      content: 'ddd above\n{% body %}\nddd below',
-      data: {scripts: ['ddd.js']},
-      locals: {title: 'Baz'}
+      contents: Buffer.from('ddd above\n{% body %}\nddd below'),
+      data: { scripts: ['ddd.js'] },
+      locals: { title: 'Baz' }
     }
   };
 
   it('should replace multiple tags', function() {
-    var file = {content: 'This is content', layout: 'aaa', path: 'foo'};
-    assert.deepEqual(layouts(file, stack).content, [
+    const file = { contents: Buffer.from('This is content'), layout: 'aaa', path: 'foo' };
+    assert.deepEqual(layouts(file, stack).contents.toString(), [
       'default above',
       'ccc above',
       'bbb above',

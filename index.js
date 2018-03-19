@@ -1,28 +1,28 @@
 'use strict';
 
-var delims = require('delimiter-regex');
-var isObject = require('isobject');
-var isFalsey = require('falsey');
-var getFile = require('get-view');
-var utils = require('./utils');
-var regexCache = {};
+const isFalsey = require('falsey');
+const getView = require('get-view');
+let memo = new Map();
 
 /**
- * Apply a layout from the `layouts` object to `file.contents`.
- * Layouts will be recursively applied until a layout is not
- * defined by the returned file.
+ * Apply a layout from the `layouts` collection to `file.contents`. Layouts will be
+ * recursively applied until a layout is not defined by the returned file.
  *
  * ```js
- * var applyLayouts = require('layouts');
- * var layouts = {};
- * layouts.default = new File({path: 'default', contents: new Buffer('foo\n{% body %}\nbar')}),
- * layouts.other = new File({path: 'other', contents: new Buffer('baz\n{% body %}\nqux')});
- * layouts.other.layout = 'default';
+ * const renderLayouts = require('layouts');
+ * const layouts = {
+ *   default: new File({ path: 'default', contents: new Buffer('foo\n{% body %}\nbar')}),
+ *   sidebar: new File({
+ *     path: 'sidebar.hbs',
+ *     contents: new Buffer('baz\n{% body %}\nqux'),
+ *     layout: default
+ *   })
+ * };
  *
- * var file = new File({path: 'whatever', contents: new Buffer('inner')});
+ * const file = new File({path: 'whatever', contents: new Buffer('inner')});
  * file.layout = 'other';
  *
- * applyLayouts(file, layouts);
+ * renderLayouts(file, layouts);
  * console.log(file.contents.toString());
  * // foo
  * // bar
@@ -31,53 +31,51 @@ var regexCache = {};
  * // qux
  * ```
  * @param {Object} `file` File object. This can be a plain object or [vinyl][] file.
- * @param {Object} `layouts` Object of file objects to use as "layouts".
+ * @param {Object} `layouts` Collection of layouts (file objects).
  * @param {Object} `options`
  * @return {Object} Returns the original file object with layout(s) applied.
  * @api public
  */
 
-function layouts(file, stack, options, fn) {
-  if (!isObject(file)) {
+function layouts(file, layouts, options, transformFn) {
+  if (!file || typeof file !== 'object') {
     throw new TypeError('expected file to be an object');
   }
-  if (typeof file.path !== 'string') {
-    throw new TypeError('expected file.path to be a string');
-  }
+
   if (typeof options === 'function') {
-    fn = options;
+    transformFn = options;
     options = null;
   }
 
-  var opts = Object.assign({}, options);
-  var name = getLayoutName(file, opts);
-  if (name === false) {
-    return file;
-  }
+  const opts = Object.assign({}, options);
+  let name = getLayoutName(file, opts);
+  if (!name) return file;
 
-  if (typeof name === 'undefined') {
-    throw new TypeError('expected layout name to be a string or falsey, not undefined');
-  }
-
-  file.layoutStack = file.layoutStack || [];
+  define(file, 'layoutStack', file.layoutStack || []);
   opts.tagname = opts.tagname || 'body';
-  var regex = createRegex(opts);
-  var layout;
-  var prev;
+  const regex = createDelimiterRegex(opts);
+  const history = [];
+  let layout;
+  let n = 0;
 
-  // recursively resolve stack
-  while (name && (prev !== name) && (layout = getFile(name, stack))) {
+  // recursively resolve layouts
+  while (name && !inHistory(name, history, opts) && (layout = getLayout(layouts, name))) {
     file.layoutStack.push(layout);
-    prev = name;
-    name = resolveLayout(file, layout, opts, regex, name);
+    history.push(name);
 
-    // if a function is passed, call it on the file
-    if (typeof fn === 'function') {
-      fn(file, layout);
+    // if a function is passed, call it on the file before resolving the next layout
+    if (typeof transformFn === 'function') {
+      transformFn(file, layout);
     }
+
+    name = resolveLayout(file, layout, opts, regex, name);
+    n++;
   }
 
-  file.contents = new Buffer(file.content);
+  if (n === 0) {
+    throw new Error(`layout ${name} was not found`);
+  }
+
   return file;
 }
 
@@ -86,32 +84,16 @@ function layouts(file, stack, options, fn) {
  */
 
 function resolveLayout(file, layout, options, regex, name) {
-  var val = toString(layout, options);
+  const layoutString = toString(layout, options);
 
-  if (!regex.test(val)) {
-    var delims = utils.matchDelims(regex, options.tagname);
-    throw new Error(`cannot find tag "${delims}" in "${name}"`);
+  if (!regex.test(layoutString)) {
+    throw new Error(`cannot find tag "${regex.source}" in "${name}"`);
   }
 
   // ensure that the indent variable is defined
-  var str = toString(file, options);
-  file.content = val.replace(regex, str);
-
-  layout.content = toString(layout, options);
-  if (!layout.contents) {
-    layout.contents = new Buffer(layout.content);
-  }
-
+  const fileString = toString(file, options);
+  file.contents = Buffer.from(layoutString.replace(regex, fileString));
   return getLayoutName(layout, options);
-}
-
-/**
- * Get the contents string from the file object
- */
-
-function toString(file, options) {
-  var str = (file.content || file.contents).toString();
-  return options.trim ? str.trim() : str;
 }
 
 /**
@@ -127,60 +109,127 @@ function toString(file, options) {
  */
 
 function getLayoutName(file, options) {
-  var defaultLayout = options.defaultLayout;
-  var prop = options.layoutProp || 'layout';
-  var name = file[prop];
+  const defaultLayout = options.defaultLayout;
+  const prop = options.layoutProp || 'layout';
+  const name = file[prop];
   if (typeof name === 'undefined' || name === true || name === defaultLayout) {
     return defaultLayout;
   }
-  name = String(name);
-  if (name === 'false' || name === 'null' || name === 'nil' || name === '') {
-    return false;
-  }
-  if (name && isFalsey(name)) {
+  if (isFalsey(name)) {
     return false;
   }
   return name;
 }
 
 /**
- * Create the regex to use for matching
+ * Returns true if `name` is in the layout `history`
  */
 
-function createRegex(options) {
-  var opts = Object.assign({}, options);
-  var layoutDelims = options.delims || options.layoutDelims;
-  var key = options.tagname;
-  if (layoutDelims) key += layoutDelims;
-  var regex;
-  if (regexCache.hasOwnProperty(key)) {
-    return regexCache[key];
+function inHistory(name, history, options) {
+  if (options.disableHistory === true) {
+    return false;
   }
+  return history.indexOf(name) !== -1;
+}
+
+/**
+ * Gets the layout to use from the given collection
+ */
+
+function getLayout(collection, name) {
+  for (const key of Object.keys(collection)) {
+    const view = collection[key];
+    if (name === key) {
+      return view;
+    }
+    if (!view.hasPath) {
+      return getView(collection, name);
+    }
+    if (view.hasPath(name)) {
+      return view;
+    }
+  }
+}
+
+/**
+ * Creates a regular expression to use for matching delimiters, based on
+ * the given options.
+ */
+
+function createDelimiterRegex(options) {
+  const opts = Object.assign({}, options);
+  let tagname = options.tagname;
+  let layoutDelims = options.delims || options.layoutDelims || `{% (${tagname}) %}`;
+  let key = tagname;
+
+  if (layoutDelims) key += layoutDelims.toString();
+  if (memo.has(key)) {
+    return memo.get(key);
+  }
+
   if (layoutDelims instanceof RegExp) {
-    regexCache[key] = layoutDelims;
+    memo.set(key, layoutDelims);
     return layoutDelims;
   }
+
   if (Array.isArray(layoutDelims)) {
-    opts.close = layoutDelims[1];
-    opts.open = layoutDelims[0];
+    layoutDelims = `${opts.layoutDelims[0]} (${tagname}) ${opts.layoutDelims[1]}`;
   }
-  if (typeof layoutDelims === 'string') {
-    regex = new RegExp(layoutDelims);
-    regexCache[key] = regex;
-    return regex;
+
+  if (typeof layoutDelims !== 'string') {
+    throw new TypeError('expected options.layoutDelims to be a string, array or regex');
   }
-  opts.flags = 'g';
-  opts.close = opts.close || '%}';
-  opts.open = opts.open || '{%';
-  regex = delims(opts);
-  regexCache[key] = regex;
+
+  const regex = new RegExp(layoutDelims, 'g');
+  memo.set(key, regex);
   return regex;
+}
+
+/**
+ * Gets the contents string from the file object.
+ */
+
+function toString(file, options) {
+  const str = (file.content || file.contents).toString();
+  return options.trim ? str.trim() : str;
+}
+
+/**
+ * When an error is thrown, this function attempts to re-create the
+ * correct delimiter pattern to use in error messages
+ */
+
+function matchDelims(regex, tagname) {
+  const types = {
+    '{%=': str => `{%= ${str} %}`,
+    '{%-': str => `{%- ${str} %}`,
+    '{%': str => `{% ${str} %}`,
+    '{{': str => `{{ ${str} }}`,
+    '<%': str => `<% ${str} %>`,
+    '<%=': str => `<%= ${str} %>`,
+    '<%-': str => `<%- ${str} %>`
+  };
+  const match = /\\?([^\s(]+)/.exec(regex.source);
+  const delim = match ? match[1] : '';
+  if (types[delim]) {
+    return types[delim](tagname);
+  }
+}
+
+function define(obj, key, val) {
+  Reflect.defineProperty(obj, key, {
+    configurable: true,
+    enumerable: false,
+    writeable: true,
+    value: val
+  });
 }
 
 /**
  * Expose utils
  */
 
+layouts.clearCache = () => (memo = new Map());
 layouts.getLayoutName = getLayoutName;
-layouts.createRegex = createRegex;
+layouts.createDelimiterRegex = createDelimiterRegex;
 module.exports = layouts;

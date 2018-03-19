@@ -13,6 +13,6 @@ const layoutCollection = {
   'two-col': { contents: fs.readFileSync(templates('two-col.html')), layout: 'default' }
 };
 
-renderLayouts(file, layoutCollection);
+renderLayouts(file, layoutCollection, { preserveWhitespace: true });
 
 console.log(file.contents.toString());

@@ -5,6 +5,8 @@ const assert = require('assert');
 const layouts = require('..');
 
 describe('layouts', function() {
+  beforeEach(() => layouts.clearCache());
+
   const stack = {
     default: {
       contents: Buffer.from('default above\n{% body %}\ndefault below'),

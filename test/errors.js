@@ -5,6 +5,8 @@ const assert = require('assert');
 const layouts = require('..');
 
 describe('errors:', function() {
+  beforeEach(() => layouts.clearCache());
+
   describe('layout', function() {
     it('should throw an error when a layout is not found.', function() {
       assert.throws(function() {

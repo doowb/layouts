@@ -5,6 +5,8 @@ const assert = require('assert');
 const layouts = require('..');
 
 describe('preserve whitespace', function() {
+  beforeEach(() => layouts.clearCache());
+
   it('should preserve the whitespace on a given string.', function() {
     const collection = { blah: { contents: Buffer.from('blah above\n  {% body %}\nblah below') } };
     const file = {
@@ -14,7 +16,7 @@ describe('preserve whitespace', function() {
     };
 
     const expected = 'blah above\n  first line of content\n  second line of content\nblah below';
-    const actual = layouts(file, collection, { whitespace: true });
+    const actual = layouts(file, collection, { preserveWhitespace: true });
     assert.deepEqual(actual.contents.toString(), expected);
   });
 
@@ -39,7 +41,7 @@ describe('preserve whitespace', function() {
       'one below'
     ].join('\n');
 
-    const actual = layouts(file, collection, { whitespace: true });
+    const actual = layouts(file, collection, { preserveWhitespace: true });
     assert.deepEqual(actual.contents.toString(), expected);
   });
 });

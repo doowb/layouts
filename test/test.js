@@ -5,6 +5,8 @@ const assert = require('assert');
 const layouts = require('..');
 
 describe('layouts', function() {
+  beforeEach(() => layouts.clearCache());
+
   const stack = {
     multiple: {
       contents: Buffer.from('blah above\n{% body %}\n{% body %}\nblah below')
@@ -40,8 +42,8 @@ describe('layouts', function() {
   };
 
   it('should apply a layout to the given string.', function() {
-    const obj = { abc: { contents: 'blah above\n{% body %}\nblah below' } };
-    const file = { contents: 'This is content', layout: 'abc', path: 'foo' };
+    const obj = { abc: { contents: Buffer.from('blah above\n{% body %}\nblah below') } };
+    const file = { contents: Buffer.from('This is content'), layout: 'abc', path: 'foo' };
     assert.deepEqual(layouts(file, obj).contents.toString(), [
       'blah above',
       'This is content',
@@ -51,8 +53,8 @@ describe('layouts', function() {
 
   describe('when a defaultLayout is defined', function() {
     it('should not apply a layout if the name is an empty string:', function() {
-      const obj = { abc: { contents: 'blah above\n{% body %}\nblah below' } };
-      const file = { contents: 'This is content', layout: '', path: 'foo' };
+      const obj = { abc: { contents: Buffer.from('blah above\n{% body %}\nblah below') } };
+      const file = { contents: Buffer.from('This is content'), layout: '', path: 'foo' };
       assert.deepEqual(layouts(file, obj, {defaultLayout: 'abc'}).contents.toString(), [
         'This is content'
       ].join('\n'));
@@ -60,17 +62,17 @@ describe('layouts', function() {
 
     it('should throw an error if layout is specified and not found', function() {
       assert.throws(function() {
-        const obj = { abc: { path: 'blah', contents: 'blah above\n{% body %}\nblah below' } };
-        const file = { contents: 'This is content', layout: 'ffo', path: 'foo' };
+        const obj = { abc: { path: 'blah', contents: Buffer.from('blah above\n{% body %}\nblah below') } };
+        const file = { contents: Buffer.from('This is content'), layout: 'ffo', path: 'foo' };
         layouts(file, obj, { defaultLayout: 'abc' });
       }, /not found/);
     });
   });
 
   it('should not apply a layout when the layout name is falsey', function() {
-    const obj = { abc: { contents: 'blah above\n{% body %}\nblah below' } };
+    const obj = { abc: { contents: Buffer.from('blah above\n{% body %}\nblah below') } };
     function createFile(name) {
-      return { contents: 'This is content', layout: name, path: 'foo' };
+      return { contents: Buffer.from('This is content'), layout: name, path: 'foo' };
     }
     assert.deepEqual(layouts(createFile('none'), obj).contents.toString(), 'This is content');
     assert.deepEqual(layouts(createFile('no'), obj).contents.toString(), 'This is content');
@@ -113,7 +115,7 @@ describe('layouts', function() {
     });
 
     it('should replace the `{%= body %}` tag with content.', function() {
-      const file = {contents: 'This is content', layout: 'aaa', path: 'foo'};
+      const file = {contents: Buffer.from('This is content'), layout: 'aaa', path: 'foo'};
       assert.deepEqual(layouts(file, stack).contents.toString(), [
         'default above',
         'ccc above',
@@ -145,25 +147,25 @@ describe('layouts', function() {
 
   describe('custom placeholders', function() {
     const stack2 = {
-      'default': {contents: 'default above\n{% foo %}\ndefault below', locals: {title: 'Quux'}},
-      aaa: {contents: 'aaa above\n{% foo %}\naaa below', locals: {title: 'Foo'}, layout: 'bbb'},
-      bbb: {contents: 'bbb above\n{% foo %}\nbbb below', locals: {title: 'Bar'}, layout: 'ccc'},
-      ccc: {contents: 'ccc above\n{% foo %}\nccc below', locals: {title: 'Baz'}, layout: 'default'},
-      ddd: {contents: 'ddd above\n{% foo %}\nddd below', locals: {title: 'Baz'} }
+      'default': {contents: Buffer.from('default above\n{% foo %}\ndefault below'), locals: {title: 'Quux'}},
+      aaa: {contents: Buffer.from('aaa above\n{% foo %}\naaa below'), locals: {title: 'Foo'}, layout: 'bbb'},
+      bbb: {contents: Buffer.from('bbb above\n{% foo %}\nbbb below'), locals: {title: 'Bar'}, layout: 'ccc'},
+      ccc: {contents: Buffer.from('ccc above\n{% foo %}\nccc below'), locals: {title: 'Baz'}, layout: 'default'},
+      ddd: {contents: Buffer.from('ddd above\n{% foo %}\nddd below'), locals: {title: 'Baz'} }
     };
     const stack3 = {
-      'default': {contents: 'default above\n{{ body }}\ndefault below', locals: {title: 'Quux'}},
-      aaa: {contents: 'aaa above\n{{ body }}\naaa below', locals: {title: 'Foo'}, layout: 'bbb'},
-      bbb: {contents: 'bbb above\n{{ body }}\nbbb below', locals: {title: 'Bar'}, layout: 'ccc'},
-      ccc: {contents: 'ccc above\n{{ body }}\nccc below', locals: {title: 'Baz'}, layout: 'default'},
-      ddd: {contents: 'ddd above\n{{ body }}\nddd below', locals: {title: 'Baz'} }
+      'default': {contents: Buffer.from('default above\n{{ body }}\ndefault below'), locals: {title: 'Quux'}},
+      aaa: {contents: Buffer.from('aaa above\n{{ body }}\naaa below'), locals: {title: 'Foo'}, layout: 'bbb'},
+      bbb: {contents: Buffer.from('bbb above\n{{ body }}\nbbb below'), locals: {title: 'Bar'}, layout: 'ccc'},
+      ccc: {contents: Buffer.from('ccc above\n{{ body }}\nccc below'), locals: {title: 'Baz'}, layout: 'default'},
+      ddd: {contents: Buffer.from('ddd above\n{{ body }}\nddd below'), locals: {title: 'Baz'} }
     };
     const stack4 = {
-      'default': {contents: 'default above\n{{ foo }}\ndefault below', locals: {title: 'Quux'}},
-      aaa: {contents: 'aaa above\n{{ foo }}\naaa below', locals: {title: 'Foo'}, layout: 'bbb'},
-      bbb: {contents: 'bbb above\n{{ foo }}\nbbb below', locals: {title: 'Bar'}, layout: 'ccc'},
-      ccc: {contents: 'ccc above\n{{ foo }}\nccc below', locals: {title: 'Baz'}, layout: 'default'},
-      ddd: {contents: 'ddd above\n{{ foo }}\nddd below', locals: {title: 'Baz'} }
+      'default': {contents: Buffer.from('default above\n{{ foo }}\ndefault below'), locals: {title: 'Quux'}},
+      aaa: {contents: Buffer.from('aaa above\n{{ foo }}\naaa below'), locals: {title: 'Foo'}, layout: 'bbb'},
+      bbb: {contents: Buffer.from('bbb above\n{{ foo }}\nbbb below'), locals: {title: 'Bar'}, layout: 'ccc'},
+      ccc: {contents: Buffer.from('ccc above\n{{ foo }}\nccc below'), locals: {title: 'Baz'}, layout: 'default'},
+      ddd: {contents: Buffer.from('ddd above\n{{ foo }}\nddd below'), locals: {title: 'Baz'} }
     };
 
     it('should use a custom tagname', function() {
@@ -227,14 +229,14 @@ describe('layouts', function() {
     });
 
     it('should use default delimiters', function() {
-      const obj = { abc: { contents: '{%= body %}[[body]]{%body%}{% body %}<%body%>', path: 'abc' } };
-      const file = { contents: 'INNER', layout: 'abc', path: 'foo' };
+      const obj = { abc: { contents: Buffer.from('{%= body %}[[body]]{%body%}{% body %}<%body%>'), path: 'abc' } };
+      const file = { contents: Buffer.from('INNER'), layout: 'abc', path: 'foo' };
       assert.deepEqual(layouts(file, obj).contents.toString(), '{%= body %}[[body]]{%body%}INNER<%body%>');
     });
 
     it('should use custom delimiters', function() {
-      const obj = { abc: { contents: '{%= body %}[[body]]{%body%}{% body %}<% body %>' } };
-      const file = { contents: 'INNER', layout: 'abc', path: 'foo' };
+      const obj = { abc: { contents: Buffer.from('{%= body %}[[body]]{%body%}{% body %}<% body %>') } };
+      const file = { contents: Buffer.from('INNER'), layout: 'abc', path: 'foo' };
       const opts = { layoutDelims: ['<%', '%>'] };
       assert.deepEqual(layouts(file, obj, opts).contents.toString(), '{%= body %}[[body]]{%body%}{% body %}INNER');
     });
@@ -258,8 +260,8 @@ describe('layouts', function() {
 
   describe('layout delimiters', function() {
     it('should apply a layout to the given string.', function() {
-      const obj = {blah: {contents: 'blah above\n{% body %}\nblah below'}};
-      const file = {contents: 'This is content', layout: 'blah', path: 'foo'};
+      const obj = {blah: {contents: Buffer.from('blah above\n{% body %}\nblah below') }};
+      const file = {contents: Buffer.from('This is content'), layout: 'blah', path: 'foo'};
       assert.deepEqual(layouts(file, obj).contents.toString(), [
         'blah above',
         'This is content',

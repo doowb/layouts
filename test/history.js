@@ -6,6 +6,8 @@ const assert = require('assert');
 const layouts = require('..');
 
 describe('stack', function() {
+  beforeEach(() => layouts.clearCache());
+
   const stack = {
     default: {
       contents: Buffer.from('default above\n{% body %}\ndefault below'),
@@ -34,7 +36,7 @@ describe('stack', function() {
 
   it('should return an object with the layout history.', function() {
     const obj = { blah: { contents: Buffer.from('blah above\n{% body %}\nblah below') } };
-    const file = { contents: 'This is content', layout: 'blah', path: 'foo' };
+    const file = { contents: Buffer.from('This is content'), layout: 'blah', path: 'foo' };
     const actual = layouts(file, obj);
     assert(actual.hasOwnProperty('layoutStack'));
     assert(Array.isArray(actual.layoutStack));

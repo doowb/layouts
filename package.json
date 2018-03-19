@@ -14,8 +14,7 @@
   },
   "license": "MIT",
   "files": [
-    "index.js",
-    "utils.js"
+    "index.js"
   ],
   "main": "index.js",
   "engines": {
@@ -52,6 +51,8 @@
     "haml-coffee",
     "hamljs",
     "handlebars",
+    "handlebars-layouts",
+    "hbs",
     "hogan",
     "hogan-js",
     "jade",
@@ -84,7 +85,7 @@
     "wrap"
   ],
   "verb": {
-    "toc": true,
+    "toc": false,
     "layout": "default",
     "tasks": [
       "readme"
@@ -95,19 +96,10 @@
     "related": {
       "list": [
         "assemble",
-        "gulp",
-        "handlebars-layouts",
-        "inject-snippet",
         "templates",
-        "verb",
-        "vinyl"
+        "verb"
       ]
     },
-    "reflinks": [
-      "verb",
-      "verb-generate-readme",
-      "vinyl"
-    ],
     "lint": {
       "reflinks": true
     }

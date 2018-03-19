@@ -54,21 +54,22 @@ function layouts(file, layouts, options, transformFn) {
   define(file, 'layoutStack', file.layoutStack || []);
   opts.tagname = opts.tagname || 'body';
   const regex = createDelimiterRegex(opts);
-  const history = [];
   let layout;
   let n = 0;
 
   // recursively resolve layouts
-  while (name && !inHistory(name, history, opts) && (layout = getLayout(layouts, name))) {
-    file.layoutStack.push(layout);
-    history.push(name);
+  while ((layout = getLayout(layouts, name))) {
+    if (inHistory(file, layout, opts)) {
+      break;
+    }
 
     // if a function is passed, call it on the file before resolving the next layout
     if (typeof transformFn === 'function') {
       transformFn(file, layout);
     }
 
-    name = resolveLayout(file, layout, opts, regex, name);
+    file.layoutStack.push(layout);
+    name = renderLayout(file, layout, opts, regex, name);
     n++;
   }
 
@@ -80,19 +81,59 @@ function layouts(file, layouts, options, transformFn) {
 }
 
 /**
- * Resolve the layout to use for the current file.
+ * Apply the current layout to the file.
  */
 
-function resolveLayout(file, layout, options, regex, name) {
-  const layoutString = toString(layout, options);
+// function renderLayout(file, layout, options, regex, name) {
+//   const layoutString = toString(layout, options);
 
-  if (!regex.test(layoutString)) {
-    throw new Error(`cannot find tag "${regex.source}" in "${name}"`);
+//   if (!regex.test(layoutString)) {
+//     throw new Error(`cannot find tag "${regex.source}" in layout "${name}"`);
+//   }
+
+//   // ensure that the indent variable is defined
+//   const fileString = toString(file, options);
+//   const newString = layoutString.replace(regex, fileString);
+
+//   file.contents = Buffer.from(newString);
+//   return getLayoutName(layout, options);
+// }
+function renderLayout(file, layout, options, regex, name) {
+  let layoutString = toString(layout, options);
+
+  if (!layoutString) {
+    throw new Error('expected layout contents to be a buffer');
   }
-
   // ensure that the indent variable is defined
   const fileString = toString(file, options);
-  file.contents = Buffer.from(layoutString.replace(regex, fileString));
+  if (!fileString) {
+    throw new Error('expected file contents to be a buffer');
+  }
+
+  // reset lastIndex, since regex is cached
+  regex.lastIndex = 0;
+
+  if (!regex.test(layoutString)) {
+    throw new Error(`cannot find tag "${regex.source}" in layout "${name}"`);
+  }
+
+  if (options.whitespace === true) {
+    regex = new RegExp('(?:^(\\s+))?' + regex.source, 'gm');
+
+    let lines
+    const str = layoutString.replace(regex, function(m, whitespace, body, index) {
+      if (whitespace) {
+        lines = lines || fileString.split('\n'); // only split once, JIT
+        return lines.map(line => whitespace + line).join('\n');
+      }
+      return fileString;
+    });
+
+    file.contents = Buffer.from(str);
+  } else {
+    file.contents = Buffer.from(layoutString.replace(regex, fileString));
+  }
+
   return getLayoutName(layout, options);
 }
 
@@ -125,11 +166,11 @@ function getLayoutName(file, options) {
  * Returns true if `name` is in the layout `history`
  */
 
-function inHistory(name, history, options) {
-  if (options.disableHistory === true) {
-    return false;
+function inHistory(file, layout, options) {
+  if (options.disableHistory !== true) {
+    return file.layoutStack.indexOf(layout) !== -1;
   }
-  return history.indexOf(name) !== -1;
+  return false;
 }
 
 /**
@@ -137,6 +178,7 @@ function inHistory(name, history, options) {
  */
 
 function getLayout(collection, name) {
+  if (!name) return;
   for (const key of Object.keys(collection)) {
     const view = collection[key];
     if (name === key) {
@@ -164,7 +206,9 @@ function createDelimiterRegex(options) {
 
   if (layoutDelims) key += layoutDelims.toString();
   if (memo.has(key)) {
-    return memo.get(key);
+    const re = memo.get(key);
+    re.lastIndex = 0;
+    return re;
   }
 
   if (layoutDelims instanceof RegExp) {
@@ -195,26 +239,8 @@ function toString(file, options) {
 }
 
 /**
- * When an error is thrown, this function attempts to re-create the
- * correct delimiter pattern to use in error messages
+ * Add a non-enumerable property to `obj`
  */
-
-function matchDelims(regex, tagname) {
-  const types = {
-    '{%=': str => `{%= ${str} %}`,
-    '{%-': str => `{%- ${str} %}`,
-    '{%': str => `{% ${str} %}`,
-    '{{': str => `{{ ${str} }}`,
-    '<%': str => `<% ${str} %>`,
-    '<%=': str => `<%= ${str} %>`,
-    '<%-': str => `<%- ${str} %>`
-  };
-  const match = /\\?([^\s(]+)/.exec(regex.source);
-  const delim = match ? match[1] : '';
-  if (types[delim]) {
-    return types[delim](tagname);
-  }
-}
 
 function define(obj, key, val) {
   Reflect.defineProperty(obj, key, {

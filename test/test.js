@@ -84,7 +84,7 @@ describe('layouts', function() {
   describe('apply layouts.', function() {
     it('should support multiple body tags', function() {
       const file = {
-        contents: 'This is content',
+        contents: Buffer.from('This is content'),
         layout: 'multiple',
         path: 'foo'
       };
@@ -99,7 +99,7 @@ describe('layouts', function() {
 
     it('should trim whitespace', function() {
       const file = {
-        contents: '   This is content   ',
+        contents: Buffer.from('   This is content   '),
         layout: 'multiple',
         path: 'foo'
       };

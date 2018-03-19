@@ -20,6 +20,19 @@ describe('preserve whitespace', function() {
     assert.deepEqual(actual.contents.toString(), expected);
   });
 
+  it('should work when no whitespace leads the body tag', function() {
+    const collection = { blah: { contents: Buffer.from('blah above\n{% body %}\nblah below') } };
+    const file = {
+      contents: Buffer.from('first line of content\nsecond line of content'),
+      layout: 'blah',
+      path: 'foo'
+    };
+
+    const expected = 'blah above\nfirst line of content\nsecond line of content\nblah below';
+    const actual = layouts(file, collection, { preserveWhitespace: true });
+    assert.deepEqual(actual.contents.toString(), expected);
+  });
+
   it('should preserve the whitespace on a given string in multiple layouts.', function() {
     const collection = {
       one: { contents: Buffer.from('one above\n  {% body %}\none below') },

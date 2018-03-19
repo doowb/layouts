@@ -32,8 +32,6 @@ function layouts(file, layoutCollection, options, transformFn) {
     options = null;
   }
 
-  define(file, 'layoutStack', file.layoutStack || []);
-
   const opts = Object.assign({ tagname: 'body' }, options, file.options);
   const regex = createDelimiterRegex(opts);
   let name = getLayoutName(file, opts);
@@ -41,6 +39,8 @@ function layouts(file, layoutCollection, options, transformFn) {
   let n = 0;
 
   if (!name) return file;
+
+  define(file, 'layoutStack', file.layoutStack || []);
 
   // recursively resolve layouts
   while ((layout = getLayout(layoutCollection, name))) {
@@ -68,14 +68,14 @@ function layouts(file, layoutCollection, options, transformFn) {
  */
 
 function resolveLayout(file, layout, options, regex, name) {
-  const layoutString = toString(layout, options);
-  if (!layoutString) {
+  if (typeOf(layout.contents) !== 'buffer') {
     throw new Error('expected layout.contents to be a buffer');
   }
 
   // reset lastIndex, since regex is cached
   regex.lastIndex = 0;
 
+  const layoutString = toString(layout, options);
   if (!regex.test(layoutString)) {
     throw new Error(`cannot find tag "${regex.source}" in layout "${name}"`);
   }

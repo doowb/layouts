@@ -44,11 +44,26 @@ describe('layouts', function() {
   it('should apply a layout to the given string.', function() {
     const obj = { abc: { contents: Buffer.from('blah above\n{% body %}\nblah below') } };
     const file = { contents: Buffer.from('This is content'), layout: 'abc', path: 'foo' };
-    assert.deepEqual(layouts(file, obj).contents.toString(), [
-      'blah above',
-      'This is content',
-      'blah below'
-    ].join('\n'));
+    assert.deepEqual(layouts(file, obj).contents.toString(), 'blah above\nThis is content\nblah below');
+  });
+
+  it('should not apply a layout to itself', function() {
+    const layoutCollection = {
+      default: { contents: Buffer.from('default above\n{% body %}\ndefault below'), layout: 'default' }
+    };
+    const file = { contents: Buffer.from('This is content'), layout: 'default', path: 'foo' };
+    const actual = layouts(file, layoutCollection);
+    assert.deepEqual(actual.contents.toString(), 'default above\nThis is content\ndefault below');
+  });
+
+  it('should apply cyclical layouts exactly once', function() {
+    const layoutCollection = {
+      default: { contents: Buffer.from('default above\n{% body %}\ndefault below'), layout: 'other' },
+      other: { contents: Buffer.from('other above\n{% body %}\nother below'), layout: 'default' },
+    };
+    const file = { contents: Buffer.from('This is content'), layout: 'default', path: 'foo' };
+    const actual = layouts(file, layoutCollection);
+    assert.deepEqual(actual.contents.toString(), 'other above\ndefault above\nThis is content\ndefault below\nother below');
   });
 
   describe('when a defaultLayout is defined', function() {
@@ -181,6 +196,13 @@ describe('layouts', function() {
         'ccc below',
         'default below'
       ].join('\n'));
+    });
+
+    it('should throw an error when custom delimiters are invalid', function() {
+      const file = {contents: stack3.aaa.contents, layout: 'bbb', path: 'foo'};
+      assert.throws(() => {
+        layouts(file, stack3, {layoutDelims: function() {}});
+      }, /expected options\.layoutDelims/);
     });
 
     it('should use custom delimiters defined as an array', function() {

@@ -7,21 +7,32 @@ const layouts = require('..');
 describe('errors:', function() {
   beforeEach(() => layouts.clearCache());
 
-  describe('layout', function() {
-    it('should throw an error when a layout is not found.', function() {
-      assert.throws(function() {
-        const obj = { abc: { path: 'blah', contents: Buffer.from('blah above\n{% body %}\nblah below') } };
-        const file = { contents: Buffer.from('This is content'), layout: 'foobar', path: 'foo' };
-        layouts(file, obj);
-      }, /layout foobar was not found/);
+  describe('file', function() {
+    it('should throw an error when a file is not an object.', function() {
+      assert.throws(() => layouts(), /expected file to be an object/);
+    });
+
+    it('should throw an error when a file.contents is not a buffer.', function() {
+      assert.throws(() => layouts({}, {}), /expected file\.contents to be a buffer/);
     });
   });
 
-  describe('arguments', function() {
-    it('should throw an error when invalid arguments are passed:', function() {
-      assert.throws(function() {
-        layouts();
-      });
+  describe('layout', function() {
+    it('should throw an error when a layout is not found.', function() {
+      const obj = { abc: { path: 'blah', contents: Buffer.from('blah above\n{% body %}\nblah below') } };
+      const file = { contents: Buffer.from('This is content'), layout: 'foobar', path: 'foo' };
+      assert.throws(() => layouts(file, obj), /layout foobar was not found/);
+    });
+
+    it('should throw an error when a layouts collection is not an object', function() {
+      const file = { contents: Buffer.from('This is content'), layout: 'foobar', path: 'foo' };
+      assert.throws(() => layouts(file), /expected layouts collection to be an object/);
+    });
+
+    it('should throw an error when layout.contents is not a buffer', function() {
+      const obj = { default: { path: 'blah', contents: 'blah above\n{% body %}\nblah below' } };
+      const file = { contents: Buffer.from('This is content'), layout: 'default', path: 'foo' };
+      assert.throws(() => layouts(file, obj), /expected layout\.contents to be a buffer/);
     });
   });
 

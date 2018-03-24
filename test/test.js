@@ -80,7 +80,7 @@ describe('layouts', function() {
         const obj = { abc: { path: 'blah', contents: Buffer.from('blah above\n{% body %}\nblah below') } };
         const file = { contents: Buffer.from('This is content'), layout: 'ffo', path: 'foo' };
         layouts(file, obj, { defaultLayout: 'abc' });
-      }, /not found/);
+      }, /layout "ffo" is defined on "foo" but cannot be found/);
     });
   });
 

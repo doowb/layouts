@@ -21,7 +21,7 @@ describe('errors:', function() {
     it('should throw an error when a layout is not found.', function() {
       const obj = { abc: { path: 'blah', contents: Buffer.from('blah above\n{% body %}\nblah below') } };
       const file = { contents: Buffer.from('This is content'), layout: 'foobar', path: 'foo' };
-      assert.throws(() => layouts(file, obj), /layout foobar was not found/);
+      assert.throws(() => layouts(file, obj), /layout "foobar" is defined on "foo" but cannot be found/);
     });
 
     it('should throw an error when a layouts collection is not an object', function() {
@@ -41,7 +41,7 @@ describe('errors:', function() {
       assert.throws(function() {
         const file = { contents: Buffer.from('This is content'), layout: 'default', path: 'foo' };
         layouts(file, { blah: { path: '', contents: Buffer.from('foo') } });
-      }, /was not found/);
+      }, /layout "default" is defined on "foo" but cannot be found/);
     });
   });
 

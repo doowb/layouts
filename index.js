@@ -57,7 +57,8 @@ function layouts(file, layoutCollection, options, transformFn) {
   }
 
   if (n === 0) {
-    throw new Error(`layout ${name} was not found`);
+    let filename = file.relative || file.path;
+    throw new Error(`layout "${name}" is defined on "${filename}" but cannot be found`);
   }
 
   return file;

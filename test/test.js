@@ -90,7 +90,6 @@ describe('layouts', function() {
       return { contents: Buffer.from('This is content'), layout: name, path: 'foo' };
     }
     assert.deepEqual(layouts(createFile('none'), obj).contents.toString(), 'This is content');
-    assert.deepEqual(layouts(createFile('no'), obj).contents.toString(), 'This is content');
     assert.deepEqual(layouts(createFile(null), obj).contents.toString(), 'This is content');
     assert.deepEqual(layouts(createFile('null'), obj).contents.toString(), 'This is content');
     assert.deepEqual(layouts(createFile(false), obj).contents.toString(), 'This is content');

@@ -1,7 +1,6 @@
 'use strict';
 
 const typeOf = require('kind-of');
-const isFalsey = require('falsey');
 const getView = require('get-view');
 
 /**
@@ -118,7 +117,7 @@ function getLayoutName(file, options) {
   if (typeof name === 'undefined' || name === true || name === defaultLayout) {
     return defaultLayout;
   }
-  if (isFalsey(name)) {
+  if (!name || ['false', 'null', 'nil', 'none', 'undefined'].includes(name.toLowerCase())) {
     return false;
   }
   return name;
@@ -138,6 +137,23 @@ function inHistory(file, layout, options) {
 
 function getLayout(collection, name) {
   if (!name) return;
+  if (collection instanceof Map) {
+    for (const [key, view] of collection) {
+      const view = collection[key];
+      if (name === key) {
+        return view;
+      }
+      if (!view.path) continue;
+      if (!view.hasPath) {
+        return getView(collection, name);
+      }
+      if (view.hasPath(name)) {
+        return view;
+      }
+    }
+    return;
+  }
+
   for (const key of Object.keys(collection)) {
     const view = collection[key];
     if (name === key) {

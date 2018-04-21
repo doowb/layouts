@@ -18,7 +18,7 @@ function layouts(file, layoutCollection, options, transformFn) {
     throw new TypeError('expected file to be an object');
   }
 
-  if (typeOf(layoutCollection) !== 'object') {
+  if (typeOf(layoutCollection) !== 'object' && !(layoutCollection instanceof Map)) {
     throw new TypeError('expected layouts collection to be an object');
   }
 
@@ -139,7 +139,6 @@ function getLayout(collection, name) {
   if (!name) return;
   if (collection instanceof Map) {
     for (const [key, view] of collection) {
-      const view = collection[key];
       if (name === key) {
         return view;
       }

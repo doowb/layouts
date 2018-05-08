@@ -54,7 +54,7 @@ describe('preserve whitespace', function() {
       'one below'
     ].join('\n');
 
-    const actual = layouts(file, collection, { preserveWhitespace: true });
+    let actual = layouts(file, collection, { preserveWhitespace: true });
     assert.deepEqual(actual.contents.toString(), expected);
   });
 });

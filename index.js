@@ -32,34 +32,49 @@ function layouts(file, layoutCollection, options, transformFn) {
   }
 
   const opts = Object.assign({ tagname: 'body' }, options, file.options);
+  const filename = file.relative || file.path;
   const regex = createDelimiterRegex(opts);
   let name = getLayoutName(file, opts);
+  let skipped = false;
   let layout;
   let n = 0;
 
   if (!name) return file;
 
-  define(file, 'layoutStack', file.layoutStack || []);
+  if (!file[layouts.stack]) {
+    define(file, layouts.stack, []);
+  }
 
   // recursively resolve layouts
   while ((layout = getLayout(layoutCollection, name))) {
-    if (inHistory(file, layout, opts)) break;
+    if (inHistory(file, layout, opts)) {
+      skipped = true;
+      break;
+    }
 
     // if a function is passed, call it on the file before resolving the next layout
     if (typeof transformFn === 'function') {
       transformFn(file, layout);
     }
 
-    file.layoutStack.push(layout);
-    name = resolveLayout(file, layout, opts, regex, name);
+    if (opts.disableHistory !== true) {
+      file[layouts.stack].push(layout);
+    }
+    name = applyLayout(file, layout, opts, regex, name);
     n++;
   }
 
   if (n === 0) {
-    let filename = file.relative || file.path;
-    throw new Error(`layout "${name}" is defined on "${filename}" but cannot be found`);
+    let msg = `layout "${name}" is defined on "${filename}" but cannot be found.`;
+    if (skipped) {
+      msg = `layout "${name}" was not applied to "${filename}" because it was already applied by a previous call to 'layouts()'. Use options.disableHistory to disable this feature.`;
+    }
+    throw new Error(msg);
   }
 
+  if (opts.keepStack !== true) {
+    delete file[layouts.stack];
+  }
   return file;
 }
 
@@ -67,40 +82,54 @@ function layouts(file, layoutCollection, options, transformFn) {
  * Apply the current layout, and resolve the name of the next layout to apply.
  */
 
-function resolveLayout(file, layout, options, regex, name) {
+function applyLayout(file, layout, options, regex, name) {
   if (typeOf(layout.contents) !== 'buffer') {
     throw new Error('expected layout.contents to be a buffer');
   }
 
-  // reset lastIndex, since regex is cached
-  regex.lastIndex = 0;
+  let fn = layout[layouts.fn];
+  if (options.compileLayout === false || typeof fn !== 'function') {
+    fn = compileLayout(name, layout, regex, options);
+  }
 
+  file.contents = Buffer.from(fn(file, options));
+  return getLayoutName(layout, options);
+}
+
+function compileLayout(name, layout, regex, options) {
   const layoutString = toString(layout, options);
+
   if (!regex.test(layoutString)) {
     throw new Error(`cannot find tag "${regex.source}" in layout "${name}"`);
   }
 
-  const fileString = toString(file, options);
-  let str;
+  const render = (file, options) => {
+    const str = toString(file, options);
 
-  if (options.preserveWhitespace === true) {
-    const re = new RegExp('(?:^(\\s+))?' + regex.source, 'gm');
-    let lines;
+    let res;
+    if (options.preserveWhitespace === true) {
+      const src = regex.source;
+      const re = new RegExp(`(?:^(\\s+))?${src}`, 'gm');
+      let lines;
 
-    str = layoutString.replace(re, function(m, whitespace) {
-      if (whitespace) {
-        lines = lines || fileString.split('\n'); // only split once, JIT
-        return lines.map(line => whitespace + line).join('\n');
-      }
-      return fileString;
-    });
+      res = layoutString.replace(re, (m, whitespace) => {
+        if (whitespace) {
+          lines = lines || str.split('\n'); // only split once, JIT
+          return lines.map(line => whitespace + line).join('\n');
+        }
+        return str;
+      });
+      regex.lastIndex = 0;
+      return res;
+    }
 
-  } else {
-    str = Buffer.from(layoutString.replace(regex, fileString));
-  }
+    res = layoutString.replace(regex, str);
+    regex.lastIndex = 0;
+    return res;
+  };
 
-  file.contents = Buffer.from(str);
-  return getLayoutName(layout, options);
+  layout[layouts.fn] = render;
+  return render;
 }
 
 /**
@@ -128,7 +157,7 @@ function getLayoutName(file, options) {
  */
 
 function inHistory(file, layout, options) {
-  return !options.disableHistory && file.layoutStack.indexOf(layout) !== -1;
+  return options.disableHistory !== true && file[layouts.stack].includes(layout);
 }
 
 /**
@@ -138,6 +167,9 @@ function inHistory(file, layout, options) {
 function getLayout(collection, name) {
   if (!name) return;
   if (collection instanceof Map) {
+    if (collection.has(name)) {
+      return collection.get(name);
+    }
     for (const [key, view] of collection) {
       if (name === key) {
         return view;
@@ -151,6 +183,10 @@ function getLayout(collection, name) {
       }
     }
     return;
+  }
+
+  if (collection[name]) {
+    return collection[name];
   }
 
   for (const key of Object.keys(collection)) {
@@ -174,30 +210,34 @@ function getLayout(collection, name) {
  */
 
 function createDelimiterRegex(options) {
-  const opts = Object.assign({}, options);
   let tagname = options.tagname;
   let layoutDelims = options.delims || options.layoutDelims || `{% (${tagname}) %}`;
   let key = tagname;
-
-  if (layoutDelims) key += layoutDelims.toString();
-  if (layouts.memo.has(key)) {
-    return layouts.memo.get(key);
-  }
+  let regex;
 
   if (layoutDelims instanceof RegExp) {
     layouts.memo.set(key, layoutDelims);
+    layoutDelims.lastIndex = 0;
     return layoutDelims;
   }
 
+  if (layoutDelims) key += layoutDelims.toString();
+  regex = layouts.memo.get(key);
+
+  if (regex) {
+    regex.lastIndex = 0;
+    return regex;
+  }
+
   if (Array.isArray(layoutDelims)) {
-    layoutDelims = `${opts.layoutDelims[0]} (${tagname}) ${opts.layoutDelims[1]}`;
+    layoutDelims = `${options.layoutDelims[0]} (${tagname}) ${options.layoutDelims[1]}`;
   }
 
   if (typeof layoutDelims !== 'string') {
     throw new TypeError('expected options.layoutDelims to be a string, array or regex');
   }
 
-  const regex = new RegExp(layoutDelims, 'g');
+  regex = new RegExp(layoutDelims, 'g');
   layouts.memo.set(key, regex);
   return regex;
 }
@@ -207,8 +247,8 @@ function createDelimiterRegex(options) {
  */
 
 function toString(file, options) {
-  let contents = file[options.contentProp] || file.content || file.contents;
-  const str = contents.toString();
+  let str = file[options.contentProp] || file.content || file.contents;
+  if (str && typeof str !== 'string') str = String(str);
   return options.trim ? str.trim() : str;
 }
 
@@ -225,12 +265,20 @@ function define(obj, key, val) {
   });
 }
 
+function isBuffer(val) {
+  return val && typeof val === 'object' && val.constructor
+    && typeof val.constructor.isBuffer === 'function'
+    && val.constructor.isBuffer(val);
+}
+
 /**
  * Expose utils
  */
 
+layouts.fn = Symbol('layoutsfn');
+layouts.stack = Symbol('layoutsstack');
 layouts.memo = new Map();
-layouts.clearCache = () => (layouts.memo = new Map());
 layouts.getLayoutName = getLayoutName;
 layouts.createDelimiterRegex = createDelimiterRegex;
+layouts.clearCache = () => (layouts.memo = new Map());
 module.exports = layouts;

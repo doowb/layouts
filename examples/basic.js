@@ -1,17 +1,22 @@
 const renderLayouts = require('..');
 
-const file = {
+const file1 = {
+  contents: Buffer.from('<div>Wrap me with a layout!!!</div>'),
+  layout: 'one'
+};
+const file2 = {
   contents: Buffer.from('<div>Wrap me with a layout!!!</div>'),
   layout: 'one'
 };
 
-const layoutCollection = {
+const layouts = {
   one: { contents: Buffer.from('one before\n{% body %}\none after'), layout: 'two' },
   two: { contents: Buffer.from('two before\n{% body %}\ntwo after') }
 };
 
-const res = renderLayouts(file, layoutCollection);
-console.log(res.contents.toString());
+console.log(renderLayouts(file1, layouts).contents.toString());
+console.log();
+console.log(renderLayouts(file2, layouts).contents.toString());
 // two before
 // one before
 // <div>Wrap me with a layout!!!</div>

@@ -125,7 +125,7 @@ describe('maps', function() {
         path: 'foo'
       };
 
-      assert.deepEqual(layouts(file, stack, {trim: true}).contents.toString(), [
+      assert.deepEqual(layouts(file, stack, { trim: true }).contents.toString(), [
         'blah above',
         'This is content',
         'This is content',

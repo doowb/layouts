@@ -43,13 +43,6 @@ while (i++ < max) {
   layouts(file, collection);
   // console.log(file.contents.toString());
   file.contents = buf;
-
-  if (i === n + inc) {
-    console.log((n += inc).toLocaleString(), `(${Math.round(n / max * 100)}%)`);
-    diff();
-    diff = timer('diff');
-    console.log();
-  }
 }
 
 time();

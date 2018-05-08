@@ -182,61 +182,9 @@ describe('layouts', function() {
       ddd: {contents: Buffer.from('ddd above\n{{ foo }}\nddd below'), locals: {title: 'Baz'} }
     };
 
-    it('should use a custom tagname', function() {
-      const file = {contents: stack2.aaa.contents, layout: 'bbb', path: 'foo'};
-      assert.deepEqual(layouts(file, stack2, {tagname: 'foo'}).contents.toString(), [
-        'default above',
-        'ccc above',
-        'bbb above',
-        'aaa above',
-        '{% foo %}',
-        'aaa below',
-        'bbb below',
-        'ccc below',
-        'default below'
-      ].join('\n'));
-    });
-
-    it('should throw an error when custom delimiters are invalid', function() {
-      const file = {contents: stack3.aaa.contents, layout: 'bbb', path: 'foo'};
-      assert.throws(() => {
-        layouts(file, stack3, {layoutDelims: function() {}});
-      }, /expected options\.layoutDelims/);
-    });
-
-    it('should use custom delimiters defined as an array', function() {
-      const file = {contents: stack3.aaa.contents, layout: 'bbb', path: 'foo'};
-      assert.deepEqual(layouts(file, stack3, {layoutDelims: ['{{', '}}']}).contents.toString(), [
-        'default above',
-        'ccc above',
-        'bbb above',
-        'aaa above',
-        '{{ body }}',
-        'aaa below',
-        'bbb below',
-        'ccc below',
-        'default below'
-      ].join('\n'));
-    });
-
-    it('should use custom delimiters defined as a string', function() {
-      const file = {contents: stack3.aaa.contents, layout: 'bbb', path: 'foo'};
-      assert.deepEqual(layouts(file, stack3, {layoutDelims: '{{([\\s\\S]+?)}}'}).contents.toString(), [
-        'default above',
-        'ccc above',
-        'bbb above',
-        'aaa above',
-        '{{ body }}',
-        'aaa below',
-        'bbb below',
-        'ccc below',
-        'default below'
-      ].join('\n'));
-    });
-
     it('should use custom delimiters defined as a regex', function() {
       const file = {contents: stack3.aaa.contents, layout: 'bbb', path: 'foo'};
-      assert.deepEqual(layouts(file, stack3, {layoutDelims: /{{([\s\S]+?)}}/}).contents.toString(), [
+      assert.deepEqual(layouts(file, stack3, {layoutRegex: /{{ body }}/}).contents.toString(), [
         'default above',
         'ccc above',
         'bbb above',
@@ -258,24 +206,8 @@ describe('layouts', function() {
     it('should use custom delimiters', function() {
       const obj = { abc: { contents: Buffer.from('{%= body %}[[body]]{%body%}{% body %}<% body %>') } };
       const file = { contents: Buffer.from('INNER'), layout: 'abc', path: 'foo' };
-      const opts = { layoutDelims: ['<%', '%>'] };
+      const opts = { layoutRegex: /<%\s*body\s*%>/g };
       assert.deepEqual(layouts(file, obj, opts).contents.toString(), '{%= body %}[[body]]{%body%}{% body %}INNER');
-    });
-
-    it('should use custom delimiters and tagname', function() {
-      const file = {contents: stack4.aaa.contents, layout: 'bbb', path: 'foo'};
-      const opts = {tagname: 'foo', layoutDelims: ['{{', '}}']};
-      assert.deepEqual(layouts(file, stack4, opts).contents.toString(), [
-        'default above',
-        'ccc above',
-        'bbb above',
-        'aaa above',
-        '{{ foo }}',
-        'aaa below',
-        'bbb below',
-        'ccc below',
-        'default below'
-      ].join('\n'));
     });
   });
 

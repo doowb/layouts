@@ -33,7 +33,7 @@ describe('preserve whitespace', function() {
     assert.deepEqual(actual.contents.toString(), expected);
   });
 
-  it('should preserve the whitespace on a given string in multiple layouts.', function() {
+  it.only('should preserve the whitespace on a given string in multiple layouts.', function() {
     const collection = {
       one: { contents: Buffer.from('one above\n  {% body %}\none below') },
       two: { contents: Buffer.from('two above\n  {% body %}\ntwo below'), layout: 'one' },

@@ -24,8 +24,7 @@
     "test": "nyc --reporter=text --reporter=html mocha"
   },
   "dependencies": {
-    "get-view": "^2.0.0",
-    "kind-of": "^6.0.2"
+    "path-ends-with": "^2.0.0"
   },
   "devDependencies": {
     "mocha": "^3.5.3",
@@ -100,6 +99,15 @@
     },
     "lint": {
       "reflinks": true
+    }
+  },
+  "lintDeps": {
+    "dependencies": {
+      "files": {
+        "patterns": [
+          "get-file.js"
+        ]
+      }
     }
   }
 }

@@ -45,13 +45,17 @@ let n = 0;
 let i = 0;
 
 const cache = {};
+const renameKey = name => {
+  return name[0] !== '/' ? path.join(process.cwd(), name + '.hbs') : name;
+};
+
 const resolveLayout = (layouts, name) => {
   if (layouts[name]) return layouts[name];
   if (cache[name]) return cache[name];
-  const key = name[0] !== '/' ? path.join(process.cwd(), name + '.hbs') : name;
+  let key = renameKey(name);
   let layout = layouts[key];
   if (!layout) layout = layouts[path.basename(name, path.extname(name))];
-  if (layout) cache[name] = layout;
+  // if (layout) cache[name] = layout;
   return layout;
 };
 

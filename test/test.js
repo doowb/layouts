@@ -157,6 +157,46 @@ describe('layouts', function() {
         'default below'
       ].join('\n'));
     });
+
+    it('should not replace content with matches from placeholders', function() {
+      const obj = { abc: { contents: Buffer.from('blah above\n{% body %}\nblah below') } };
+      const file = { contents: Buffer.from('This is $1 content'), layout: 'abc', path: 'foo' };
+      assert.deepEqual(layouts(file, obj).contents.toString(), [
+        'blah above',
+        'This is $1 content',
+        'blah below'
+      ].join('\n'));
+    });
+
+    it('should not require escaping replacement patterns in content', function() {
+      const obj = {
+        aaa: { contents: Buffer.from('aaa above\n{% body %}\naaa below'), layout: 'bbb' },
+        bbb: { contents: Buffer.from('bbb above\n{% body %}\nbbb below') },
+      };
+      const file = { contents: Buffer.from('This is $$$$1 content'), layout: 'aaa', path: 'foo' };
+      assert.deepEqual(layouts(file, obj).contents.toString(), [
+        'bbb above',
+        'aaa above',
+        'This is $$$$1 content',
+        'aaa below',
+        'bbb below'
+      ].join('\n'));
+    });
+
+    it('should interpret replacement patterns in content as strings', function() {
+      const file = {contents: Buffer.from("This is $$ $& $` $' $0 $1 $2 content"), layout: 'aaa', path: 'foo'};
+      assert.deepEqual(layouts(file, stack).contents.toString(), [
+        'default above',
+        'ccc above',
+        'bbb above',
+        'aaa above',
+        "This is $$ $& $` $' $0 $1 $2 content",
+        'aaa below',
+        'bbb below',
+        'ccc below',
+        'default below'
+      ].join('\n'));
+    });
   });
 
   describe('custom placeholders', function() {

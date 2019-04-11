@@ -96,7 +96,7 @@ function resolveLayout(file, layout, options, regex, name) {
     });
 
   } else {
-    str = Buffer.from(layoutString.replace(regex, fileString));
+    str = Buffer.from(layoutString.replace(regex, () => fileString));
   }
 
   file.contents = Buffer.from(str);

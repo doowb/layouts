@@ -21,17 +21,18 @@
     "node": ">=4"
   },
   "scripts": {
-    "test": "nyc --reporter=text --reporter=html mocha"
+    "test": "./node_modules/.bin/nyc --reporter=text --reporter=html mocha"
   },
   "dependencies": {
     "get-view": "^2.0.0",
     "kind-of": "^6.0.2"
   },
   "devDependencies": {
-    "mocha": "^3.5.3",
     "arr-union": "^3.1.0",
-    "vinyl": "^2.1.0",
-    "gulp-format-md": "^1.0.0"
+    "gulp-format-md": "^1.0.0",
+    "mocha": "^3.5.3",
+    "nyc": "^13.3.0",
+    "vinyl": "^2.1.0"
   },
   "keywords": [
     "atpl",

@@ -21,7 +21,7 @@
     "node": ">=4"
   },
   "scripts": {
-    "test": "./node_modules/.bin/nyc --reporter=text --reporter=html mocha"
+    "test": "nyc --reporter=text --reporter=html mocha"
   },
   "dependencies": {
     "get-view": "^2.0.0",
